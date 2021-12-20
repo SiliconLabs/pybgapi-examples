@@ -154,8 +154,8 @@ class App(BluetoothApp):
                 0)    # max events
         self.lib.bt.advertiser.start(
             self.adv_handle,
-            self.lib.bt.advertiser.DISCOVERABLE_MODE_GENERAL_DISCOVERABLE,
-            self.lib.bt.advertiser.CONNECTABLE_MODE_CONNECTABLE_SCANNABLE)
+            self.lib.bt.advertiser.DISCOVERY_MODE_GENERAL_DISCOVERABLE,
+            self.lib.bt.advertiser.CONNECTION_MODE_CONNECTABLE_SCANNABLE)
 
 # Script entry point.
 if __name__ == "__main__":

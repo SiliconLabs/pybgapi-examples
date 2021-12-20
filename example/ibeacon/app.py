@@ -90,8 +90,8 @@ class App(BluetoothApp):
             # Start advertising in user mode and disable connections.
             self.lib.bt.advertiser.start(
                 adv_handle,
-                self.lib.bt.advertiser.DISCOVERABLE_MODE_USER_DATA,
-                self.lib.bt.advertiser.CONNECTABLE_MODE_NON_CONNECTABLE)
+                self.lib.bt.advertiser.DISCOVERY_MODE_USER_DATA,
+                self.lib.bt.advertiser.CONNECTION_MODE_NON_CONNECTABLE)
             print("iBeacon started")
 
 # Script entry point.

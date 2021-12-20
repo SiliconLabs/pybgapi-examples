@@ -181,12 +181,9 @@ class BtMeshApp(ConnectorApp):
                 self.log.warning("BGAPI version mismatch: %s (target) != %s (host)", version, self.lib.bt.__version__)
             # Initialize Bluetooth Mesh device
             self.lib.btmesh.node.init()
-    
+
     def reset(self):
-        """ Reset Bluetooth mesh device """
-        self.lib.btmesh.node.reset()
-        # 2 seconds delay is required to finalize node reset
-        time.sleep(2)
+        """ Reset for Bluetooth mesh device """
         self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
 
 class PeriodicTimer:
