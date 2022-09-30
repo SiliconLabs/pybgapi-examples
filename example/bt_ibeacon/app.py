@@ -76,7 +76,7 @@ class App(BluetoothApp):
             # Create advertising set.
             _, adv_handle = self.lib.bt.advertiser.create_set()
             # Set custom advertising data.
-            self.lib.bt.advertiser.set_data(
+            self.lib.bt.legacy_advertiser.set_data(
                 adv_handle,
                 0,               # packet type
                 BEACON_ADV_DATA) # adv_data
@@ -88,10 +88,9 @@ class App(BluetoothApp):
                 0,    # duration
                 0)    # max events
             # Start advertising in user mode and disable connections.
-            self.lib.bt.advertiser.start(
+            self.lib.bt.legacy_advertiser.start(
                 adv_handle,
-                self.lib.bt.advertiser.DISCOVERY_MODE_USER_DATA,
-                self.lib.bt.advertiser.CONNECTION_MODE_NON_CONNECTABLE)
+                self.lib.bt.legacy_advertiser.CONNECTION_MODE_NON_CONNECTABLE)
             print("iBeacon started")
 
 # Script entry point.

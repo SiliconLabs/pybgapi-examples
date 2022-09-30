@@ -145,6 +145,9 @@ class App(BluetoothApp):
         if self.adv_handle is None:
             # Create advertising set for the first call.
             _, self.adv_handle = self.lib.bt.advertiser.create_set()
+            self.lib.bt.legacy_advertiser.generate_data(
+                self.adv_handle,
+                self.lib.bt.advertiser.DISCOVERY_MODE_GENERAL_DISCOVERABLE)
             # Set advertising interval to 100 ms.
             self.lib.bt.advertiser.set_timing(
                 self.adv_handle,
@@ -152,10 +155,9 @@ class App(BluetoothApp):
                 160,  # interval max
                 0,    # duration
                 0)    # max events
-        self.lib.bt.advertiser.start(
+        self.lib.bt.legacy_advertiser.start(
             self.adv_handle,
-            self.lib.bt.advertiser.DISCOVERY_MODE_GENERAL_DISCOVERABLE,
-            self.lib.bt.advertiser.CONNECTION_MODE_CONNECTABLE_SCANNABLE)
+            self.lib.bt.legacy_advertiser.CONNECTION_MODE_CONNECTABLE)
 
 # Script entry point.
 if __name__ == "__main__":

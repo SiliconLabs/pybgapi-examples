@@ -58,10 +58,6 @@ class App(BluetoothApp):
         # This event indicates the device has started and the radio is ready.
         # Do not call any stack command before receiving this boot event!
         if evt == "bt_evt_system_boot":
-            # Set passive scanning on 1Mb PHY
-            self.lib.bt.scanner.set_mode(self.lib.bt.gap.PHY_PHY_1M, SCAN_PASSIVE)
-            # Set scan interval and scan window
-            self.lib.bt.scanner.set_timing(self.lib.bt.gap.PHY_PHY_1M, SCAN_INTERVAL, SCAN_WINDOW)
             # Set the default connection parameters for subsequent connections
             self.lib.bt.connection.set_default_parameters(
                 CONN_INTERVAL_MIN,
@@ -79,9 +75,10 @@ class App(BluetoothApp):
 
         # This event is generated when an advertisement packet or a scan response
         # is received from a responder
-        elif evt == "bt_evt_scanner_scan_report":
+        elif evt == "bt_evt_scanner_legacy_advertisement_report":
             # Parse advertisement packets
-            if evt.packet_type == 0:
+            if (evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_CONNECTABLE and
+                evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_SCANNABLE):
                 # If a thermometer advertisement is found...
                 if find_service_in_advertisement(evt.data, HEALTH_THERMOMETER_SERVICE):
                     # then stop scanning for a while

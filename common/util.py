@@ -2,7 +2,7 @@
 Application utility module
 """
 
-# Copyright 2021 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -35,6 +35,8 @@ import traceback
 import bgapi
 from bgapi.connector import ConnectorException
 import serial.tools.list_ports
+if sys.platform.startswith('linux'):
+    from . import cpc_connector
 
 LOG_FORMAT = "%(levelname)s - %(message)s"
 BT_XAPI = os.path.join(os.path.dirname(__file__), "../api/sl_bt.xapi")
@@ -103,12 +105,16 @@ class GenericApp():
     def reset(self):
         """ Reset device, meant to be overridden by child classes. """
 
+class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                          argparse.RawDescriptionHelpFormatter):
+    """ Combination of help formatters. """
+
 class ConnectorApp(GenericApp):
     """ Generic application with automatic connector creation and argument parsing. """
     def __init__(self, apis, parser=None):
         if parser is None:
             parser = argparse.ArgumentParser()
-        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        parser.formatter_class = CustomHelpFormatter
         parser.epilog = (
             "examples:\n"
             "  %(prog)s                                   Try to autodetect serial port\n"
@@ -125,19 +131,52 @@ class ConnectorApp(GenericApp):
             type=str.upper,
             choices=logging._nameToLevel.keys(),
             help="Log level",
-            default=logging.INFO
-        )
-        args = parser.parse_args()
+            default="INFO")
+        if 'common.cpc_connector' in sys.modules:
+            parser.add_argument(
+                "-c", "--cpc",
+                help="CPC mode",
+                action='store_true')
+            parser.add_argument(
+                "--cpc_lib_path",
+                help="CPC shared library path",
+                default="/usr/local/lib/libcpc.so")
+            parser.add_argument(
+                "--cpc_instance",
+                help="CPC instance name",
+                default="cpcd_0")
+            parser.add_argument(
+                "--cpc_tracing",
+                help="Enable CPC tracing",
+                action='store_true')
+        self.args = parser.parse_args()
         # Configure logging.
-        logging.basicConfig(level=args.log, format=LOG_FORMAT)
+        logging.basicConfig(level=self.args.log, format=LOG_FORMAT)
         # Instantiate connection.
-        try:
-            self.connection = get_connector(args.conn)
-        except AutoSelectError as err:
-            logging.error("%s", err)
-            logging.error("Please specify connection explicitly.")
-            parser.print_usage()
-            sys.exit(-1)
+        if hasattr(self.args, "cpc") and self.args.cpc:
+            self.cpc = True
+            if not os.path.exists(self.args.cpc_lib_path):
+                logging.error("CPC library doesn't exist at %s", self.args.cpc_lib_path)
+                parser.print_usage()
+                sys.exit(-1)
+            try:
+                self.connection = cpc_connector.SerialConnectorCPC(
+                    self.args.cpc_lib_path,
+                    self.args.cpc_instance,
+                    self.args.cpc_tracing)
+            except ConnectorException as err:
+                logging.error("%s", err)
+                logging.error("Is CPC daemon running?")
+                sys.exit(-1)
+        else:
+            self.cpc = False
+            try:
+                self.connection = get_connector(self.args.conn)
+            except AutoSelectError as err:
+                logging.error("%s", err)
+                logging.error("Please specify connection explicitly.")
+                parser.print_usage()
+                sys.exit(-1)
         # Call parent's constructor.
         super().__init__(self.connection, apis=apis)
 
@@ -165,12 +204,15 @@ class BluetoothApp(ConnectorApp):
     def reset(self):
         """ Reset Bluetooth device. """
         self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
+        if self.cpc:
+            # Use the system hello command to synchronize the CPC communication with the target
+            self.lib.bt.system.hello()
 
 class BtMeshApp(ConnectorApp):
     """ Application class for Bluetooth mesh devices """
     def __init__(self, apis=[BT_XAPI, BTMESH_XAPI], parser=None):
         super().__init__(apis, parser=parser)
-    
+
     def _event_handler(self, evt):
         """ Internal Bluetooth event handler. """
         if evt == "bt_evt_system_boot":
@@ -275,19 +317,23 @@ def find_service_in_advertisement(adv_data, uuid):
     # Parse advertisement packet.
     i = 0
     while i < len(adv_data):
-        ad_field_length = adv_data[i]
-        ad_field_type = adv_data[i + 1]
-        # Find AD types of interest.
-        if ad_field_type in (incomplete_list, complete_list):
-            ad_uuid_count = int((ad_field_length - 1) / len(uuid))
-            # Compare each UUID to the service UUID to be found.
-            for j in range(ad_uuid_count):
-                start_idx = i + 2 + j*len(uuid)
-                # Get UUID from AD data.
-                ad_uuid = adv_data[start_idx: start_idx + len(uuid)]
-                if ad_uuid == uuid:
-                    return True
-        # Advance to the next AD structure.
-        i += ad_field_length + 1
+        try:
+            ad_field_length = adv_data[i]
+            ad_field_type = adv_data[i + 1]
+            # Find AD types of interest.
+            if ad_field_type in (incomplete_list, complete_list):
+                ad_uuid_count = int((ad_field_length - 1) / len(uuid))
+                # Compare each UUID to the service UUID to be found.
+                for j in range(ad_uuid_count):
+                    start_idx = i + 2 + j*len(uuid)
+                    # Get UUID from AD data.
+                    ad_uuid = adv_data[start_idx: start_idx + len(uuid)]
+                    if ad_uuid == uuid:
+                        return True
+            # Advance to the next AD structure.
+            i += ad_field_length + 1
+        except IndexError:
+            # Malformed advertising data
+            return False
     # UUID not found.
     return False

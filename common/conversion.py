@@ -34,7 +34,7 @@ class Ieee11073Float(float):
         mantissa = int().from_bytes(src[0:3], byteorder='little', signed=True)
         exponent = int().from_bytes([src[3]], byteorder='little', signed=True)
         val = mantissa * pow(10, exponent)
-        return val
+        return float(val)
 
     def to_bytes(self):
         '''Return an array of bytes representing an IEEE 11073 32 bit float.'''
