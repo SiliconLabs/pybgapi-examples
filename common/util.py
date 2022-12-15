@@ -25,12 +25,12 @@ Application utility module
 # 3. This notice may not be removed or altered from any source distribution.
 
 import argparse
+import itertools
 import logging
 import os.path
 import socket
 import sys
 import threading
-import time
 import traceback
 import bgapi
 from bgapi.connector import ConnectorException
@@ -38,20 +38,25 @@ import serial.tools.list_ports
 if sys.platform.startswith('linux'):
     from . import cpc_connector
 
-LOG_FORMAT = "%(levelname)s - %(message)s"
+LOG_FORMAT_SINGLE = "%(asctime)s: %(levelname)s - %(message)s"
+LOG_FORMAT = "%(asctime)s: %(name)s %(levelname)s - %(message)s"
 BT_XAPI = os.path.join(os.path.dirname(__file__), "../api/sl_bt.xapi")
 BTMESH_XAPI = os.path.join(os.path.dirname(__file__), "../api/sl_btmesh.xapi")
 
-class GenericApp():
+class GenericApp(threading.Thread):
     """ Generic application class. """
-    def __init__(self, connection, apis):
-        self.lib = bgapi.BGLib(connection, apis)
-        self.log = logging.getLogger(str(type(self)))
+    _id = itertools.count(0)
+    def __init__(self, connector, apis):
+        self.id = next(self._id)
+        self.lib = bgapi.BGLib(connector, apis)
+        self.log = logging.getLogger(f"{type(self).__name__}#{self.id}")
+        self.cpc = ('common.cpc_connector' in sys.modules) and \
+            isinstance(connector, cpc_connector.SerialConnectorCPC)
         self._run = False
+        super().__init__()
 
     def event_handler(self, evt):
         """ Public event handler to perform user actions. Meant to be overridden by child classes. """
-        self.log.info("Received event: %s", evt)
 
     def _event_handler(self, evt):
         """ Private event handler to perform internal actions. """
@@ -73,7 +78,9 @@ class GenericApp():
         # Enter main program loop.
         while self._run:
             try:
-                # The timeout is needed for Windows hosts to get the KeyboardInterrupt.
+                # The timeout is needed to get the KeyboardInterrupt.
+                # On Windows hosts, timeout is needed in both threaded and non-threaded modes.
+                # On POSIX hosts, timeout is needed only in threaded mode.
                 # The timeout value is a tradeoff between CPU load and KeyboardInterrupt response time.
                 # timeout=None: minimal CPU usage, KeyboardInterrupt not recognized until the next event.
                 # timeout=0: maximal CPU usage, KeyboardInterrupt recognized immediately.
@@ -82,6 +89,10 @@ class GenericApp():
                 if evt is not None:
                     self._event_handler(evt)
                     self.event_handler(evt)
+                    # Call dedicated event callback if available.
+                    event_callback = getattr(self, evt._str, None)
+                    if event_callback is not None:
+                        event_callback(evt)
             except bgapi.bglib.CommandFailedError as err:
                 # Get additional info from trace.
                 trace = traceback.extract_tb(sys.exc_info()[-1])[-3]
@@ -105,87 +116,12 @@ class GenericApp():
     def reset(self):
         """ Reset device, meant to be overridden by child classes. """
 
-class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
-                          argparse.RawDescriptionHelpFormatter):
-    """ Combination of help formatters. """
-
-class ConnectorApp(GenericApp):
-    """ Generic application with automatic connector creation and argument parsing. """
-    def __init__(self, apis, parser=None):
-        if parser is None:
-            parser = argparse.ArgumentParser()
-        parser.formatter_class = CustomHelpFormatter
-        parser.epilog = (
-            "examples:\n"
-            "  %(prog)s                                   Try to autodetect serial port\n"
-            "  %(prog)s COM4                              Open serial port on Windows\n"
-            "  %(prog)s /dev/tty.usbmodem1234567890121    Open serial port on macOS\n"
-            "  %(prog)s /dev/ttyACM0                      Open serial port on Linux\n"
-            "  %(prog)s 192.168.1.10                      Open TCP port")
-        parser.add_argument(
-            "conn",
-            nargs="?",
-            help="Serial port or IPv4 address of the connection. Try to autodetect serial port if not provided.")
-        parser.add_argument(
-            "-l", "--log",
-            type=str.upper,
-            choices=logging._nameToLevel.keys(),
-            help="Log level",
-            default="INFO")
-        if 'common.cpc_connector' in sys.modules:
-            parser.add_argument(
-                "-c", "--cpc",
-                help="CPC mode",
-                action='store_true')
-            parser.add_argument(
-                "--cpc_lib_path",
-                help="CPC shared library path",
-                default="/usr/local/lib/libcpc.so")
-            parser.add_argument(
-                "--cpc_instance",
-                help="CPC instance name",
-                default="cpcd_0")
-            parser.add_argument(
-                "--cpc_tracing",
-                help="Enable CPC tracing",
-                action='store_true')
-        self.args = parser.parse_args()
-        # Configure logging.
-        logging.basicConfig(level=self.args.log, format=LOG_FORMAT)
-        # Instantiate connection.
-        if hasattr(self.args, "cpc") and self.args.cpc:
-            self.cpc = True
-            if not os.path.exists(self.args.cpc_lib_path):
-                logging.error("CPC library doesn't exist at %s", self.args.cpc_lib_path)
-                parser.print_usage()
-                sys.exit(-1)
-            try:
-                self.connection = cpc_connector.SerialConnectorCPC(
-                    self.args.cpc_lib_path,
-                    self.args.cpc_instance,
-                    self.args.cpc_tracing)
-            except ConnectorException as err:
-                logging.error("%s", err)
-                logging.error("Is CPC daemon running?")
-                sys.exit(-1)
-        else:
-            self.cpc = False
-            try:
-                self.connection = get_connector(self.args.conn)
-            except AutoSelectError as err:
-                logging.error("%s", err)
-                logging.error("Please specify connection explicitly.")
-                parser.print_usage()
-                sys.exit(-1)
-        # Call parent's constructor.
-        super().__init__(self.connection, apis=apis)
-
-class BluetoothApp(ConnectorApp):
+class BluetoothApp(GenericApp):
     """ Application class for Bluetooth devices. """
-    def __init__(self, apis=BT_XAPI, parser=None):
+    def __init__(self, connector, apis=BT_XAPI):
         self.address = None
         self.address_type = None
-        super().__init__(apis, parser=parser)
+        super().__init__(connector=connector, apis=apis)
 
     def _event_handler(self, evt):
         """ Internal Bluetooth event handler. """
@@ -208,10 +144,10 @@ class BluetoothApp(ConnectorApp):
             # Use the system hello command to synchronize the CPC communication with the target
             self.lib.bt.system.hello()
 
-class BtMeshApp(ConnectorApp):
+class BtMeshApp(GenericApp):
     """ Application class for Bluetooth mesh devices """
-    def __init__(self, apis=[BT_XAPI, BTMESH_XAPI], parser=None):
-        super().__init__(apis, parser=parser)
+    def __init__(self, connector, apis=[BT_XAPI, BTMESH_XAPI]):
+        super().__init__(connector=connector, apis=apis)
 
     def _event_handler(self, evt):
         """ Internal Bluetooth event handler. """
@@ -228,82 +164,167 @@ class BtMeshApp(ConnectorApp):
         """ Reset for Bluetooth mesh device """
         self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
 
-class PeriodicTimer:
-    """ Timer to call a target function periodically in the context of a separate thread. """
-    def __init__(self, period, target=None, args=(), kwargs=None):
-        self._period = float(period)
-        self._target = target
-        self._args = args
-        if kwargs is None:
-            kwargs = {}
-        self._kwargs = kwargs
-        self._lock = threading.Lock()
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._started = False
+class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
+                          argparse.RawDescriptionHelpFormatter):
+    """ Combination of help formatters. """
 
-    def start(self):
-        """ Start the timer. Must be called from the same thread as the stop method. """
-        if self._started:
-            # Timer has already been started.
-            return
-        if not self._thread.is_alive():
-            self._thread.start()
+class ArgumentParser(argparse.ArgumentParser):
+    """ Custom argument parser for GenericApp and its derivatives """
+    def __init__(self, *args, single_mode=True, epilog=None, formatter_class=CustomHelpFormatter, **kwargs):
+        self.single_mode = single_mode
+        self.cpc_options = 'common.cpc_connector' in sys.modules
+        if self.single_mode:
+            nargs = "?"
+            cpc_const = []
+            examples = (
+                "examples:"
+                "\n  %(prog)s                 Try to autodetect serial port"
+                "\n  %(prog)s COM4            Open serial port on Windows"
+                "\n  %(prog)s /dev/ttyACM0    Open serial port on POSIX"
+                "\n  %(prog)s 192.168.1.10    Open TCP port")
+            if self.cpc_options:
+                examples += "\n  %(prog)s -c              Open default CPC daemon instance"
+                examples += "\n  %(prog)s -c cpcd_1       Open CPC daemon instance"
         else:
-            self._lock.release()
-        self._started = True
+            nargs = "*"
+            cpc_const = None
+            examples = (
+                "examples:"
+                "\n  %(prog)s                                        Try to autodetect all serial ports"
+                "\n  %(prog)s COM4 COM5 COM6 COM7 COM8               Open serial ports on Windows"
+                "\n  %(prog)s /dev/ttyACM0 /dev/ttyACM1              Open serial ports on POSIX"
+                "\n  %(prog)s 192.168.1.10 192.168.1.11              Open TCP ports"
+                "\n  %(prog)s /dev/ttyACM0 192.168.1.10              Open serial port and TCP port")
+            if self.cpc_options:
+                examples += "\n  %(prog)s -c cpcd_0 cpcd_1 cpcd_2                Open CPC daemon instances"
+                examples += "\n  %(prog)s /dev/ttyACM0 192.168.1.10 -c cpcd_1    Open serial port, TCP port and CPC daemon instance"
+        if epilog is None:
+            epilog = examples
+        else:
+            epilog = examples + "\n" + epilog
 
-    def stop(self):
-        """ Stop the timer. """
-        if not self._started:
-            # Timer is not running.
-            return
-        self._lock.acquire()
-        self._started = False
+        super().__init__(*args, epilog=epilog, formatter_class=formatter_class, **kwargs)
 
-    def _run(self):
-        """ The main loop of the timer thread. """
-        while True:
-            self._lock.acquire()
-            self._lock.release()
-            if self._target:
-                self._target(*self._args, **self._kwargs)
-            time.sleep(self._period)
+        self.add_argument(
+            "conn",
+            nargs=nargs,
+            help="Serial or TCP connection parameter. See the examples for details.")
+        if self.cpc_options:
+            self.add_argument(
+                "-c", "--cpc",
+                nargs=nargs,
+                help="CPC instance",
+                const=cpc_const)
+            self.add_argument(
+                "--cpc_lib_path",
+                help="CPC shared library path",
+                default="/usr/local/lib/libcpc.so")
+            self.add_argument(
+                "--cpc_tracing",
+                help="Enable CPC tracing",
+                action="store_true")
+        self.add_argument(
+            "-l", "--log",
+            type=str.upper,
+            choices=logging._nameToLevel.keys(),
+            help="Log level",
+            default="INFO")
 
-class AutoSelectError(Exception):
-    """ Error indicating automatic connector selection failure. """
+    def parse_args(self, *args, **kwargs):
+        """ Implement special argument parsing rules """
+        args = super().parse_args(*args, **kwargs)
+        # Propagate single_mode to the arguments
+        args.single_mode = self.single_mode
+        # Configure logging
+        if args.single_mode:
+            log_format = LOG_FORMAT_SINGLE
+        else:
+            log_format = LOG_FORMAT
+        logging.basicConfig(level=args.log, format=log_format)
+        # Check connection parameters
+        if not self.cpc_options:
+            # cpc attribute is always granted
+            args.cpc = None
+        if args.cpc and args.single_mode:
+            # Use list representation in single mode too
+            args.cpc = [args.cpc]
+        if not args.cpc and args.cpc is not None:
+            # Use default CPC instance if no argument provided
+            args.cpc = ["cpcd_0"]
+        if args.cpc and not os.path.exists(args.cpc_lib_path):
+            self.print_usage()
+            print(f"{self.prog}: error: CPC library doesn't exist at {args.cpc_lib_path}")
+            sys.exit(-1)
+        if args.cpc and args.conn and args.single_mode:
+            self.print_usage()
+            print(f"{self.prog}: error: Too many connections specified:"
+                f" -c {args.cpc[0]}, {args.conn}")
+            sys.exit(-1)
+        if args.conn and args.single_mode:
+            # Use list representation in single mode too
+            args.conn = [args.conn]
+        if not args.conn and not args.cpc:
+            # Try to autodetect serial device if no input is provided
+            args.conn = get_device_list()
+            if not args.conn:
+                self.print_usage()
+                print(f"{self.prog}: error: No serial device found."
+                    " Please specify connection explicitly.")
+                sys.exit(-1)
+            elif args.single_mode and len(args.conn) > 1:
+                self.print_usage()
+                print(f"{self.prog}: error: {len(args.conn)} serial devices found:"
+                    f"{', '.join(args.conn)}. Please specify connection explicitly.")
+                sys.exit(-1)
+        return args
 
-def get_connector(conn=None):
-    """
-    Return a serial or socket connector instance.
+def get_connector(args=None):
+    """ Return CPC, serial or socket connector instance from arguments. """
+    if args is None:
+        args = ArgumentParser().parse_args()
+    connector = []
+    if args.cpc:
+        for cpc in args.cpc:
+            try:
+                cpc_conn = cpc_connector.SerialConnectorCPC(
+                    lib_path=args.cpc_lib_path,
+                    cpc_instance=cpc,
+                    tracing=args.cpc_tracing)
+            except ConnectorException as err:
+                logging.error("%s", err)
+                logging.error("Is CPC daemon instance '%s' running?", cpc)
+                sys.exit(-1)
+            connector.append(cpc_conn)
+    if args.conn:
+        connector += [connector_from_str(conn) for conn in args.conn]
+    if args.single_mode:
+        return connector[0]
+    return connector
 
-    Try to autodetect serial device if no input is provided.
+def get_device_list():
+    """ Find Segger J-Link devices based on USB vendor ID. """
+    device_list = []
+    for com in serial.tools.list_ports.comports():
+        if com.vid == 0x1366:
+            device_list.append(com.device)
+    return device_list
+
+def connector_from_str(param):
+    """ Return a serial or socket connector instance from a string parameter.
+
     This function is optimized for Silicon Labs development boards with default parameters.
     For non-default settings use the SerialConnector and SocketConnector constructors directly.
     """
-    if conn is None:
-        # Find Segger J-Link devices based on USB vendor ID.
-        device_list = []
-        for com in serial.tools.list_ports.comports():
-            if com.vid == 0x1366:
-                device_list.append(com.device)
-        if len(device_list) == 0:
-            raise AutoSelectError("No serial device found.")
-        elif len(device_list) == 1:
-            return bgapi.SerialConnector(device_list[0])
-        else:
-            devices = ", ".join(device_list)
-            raise AutoSelectError("{} serial devices found: {}.".format(len(device_list), devices))
-    else:
-        connector_type = bgapi.SocketConnector
-        try:
-            # Check for a valid IPv4 address.
-            socket.inet_aton(conn)
-            # Append WSTK serial port number.
-            conn = (conn, 4901)
-        except OSError:
-            # Assume serial port.
-            connector_type = bgapi.SerialConnector
-        return connector_type(conn)
+    connector_type = bgapi.SocketConnector
+    try:
+        # Check for a valid IPv4 address.
+        socket.inet_aton(param)
+        # Append WSTK serial port number.
+        param = (param, 4901)
+    except OSError:
+        # Assume serial port.
+        connector_type = bgapi.SerialConnector
+    return connector_type(param)
 
 def find_service_in_advertisement(adv_data, uuid):
     """ Find service with the given UUID in the advertising data. """

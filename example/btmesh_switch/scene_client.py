@@ -33,8 +33,8 @@ from common.util import BtMeshApp
 
 class SceneClient(BtMeshApp):
 	""" Implement Scene Client Model specific APIs. """
-	def __init__(self, parser, **kwargs):
-		super().__init__(parser=parser,**kwargs)
+	def __init__(self, connector, **kwargs):
+		super().__init__(connector=connector, **kwargs)
 		# Scene recall transaction identifier
 		self.scene_recall_trid = 0
 		# How many times scene model messages are to be sent out for reliability

@@ -32,22 +32,22 @@ class SerialConnectorCPC(Connector):
         self.cpc_instance = cpc_instance
         try:
             self.cpc = lcw.CPC(self.lib_path, self.cpc_instance, tracing, self.cpc_reset)
-        except Exception as e:
-            raise ConnectorException(e)
+        except Exception as err:
+            raise ConnectorException(err) from err
         self.read_buff = bytearray()
         if endpoint_id is not None:
             self.endpoint_id = endpoint_id
         else:
             self.endpoint_id = lcw.Endpoint.Id.BLUETOOTH.value # Bluetooth (BGAPI) endpoint
-        self.tx_window_size = 1 # Only a window of 1 is supported at the moment, see CPC library documentation
-        super().__init__()
+        # Only a window of 1 is supported at the moment, see CPC library documentation
+        self.tx_window_size = 1
 
     def open(self):
         """ Opening CPC endpoint """
         try:
             self.endpoint = self.cpc.open_endpoint(self.endpoint_id, self.tx_window_size)
-        except Exception as e:
-            raise ConnectorException(e)
+        except Exception as err:
+            raise ConnectorException(err) from err
 
     def close(self):
         """ Closing CPC endpoint """
@@ -55,15 +55,15 @@ class SerialConnectorCPC(Connector):
             del self.read_buff[:]
             try:
                 self.endpoint.close()
-            except Exception as e:
-                raise ConnectorException(e)
+            except Exception as err:
+                raise ConnectorException(err) from err
 
     def write(self, data):
         """ Write data to the endpoint """
         try:
             self.endpoint.write(data)
-        except Exception as e:
-            raise ConnectorException(e)
+        except Exception as err:
+            raise ConnectorException(err) from err
 
     def read(self, size=1):
         """ Read size number of data from endpoint """
@@ -71,7 +71,7 @@ class SerialConnectorCPC(Connector):
             try:
                 data = self.endpoint.read()
                 self.read_buff.extend(data)
-            except Exception as e:
+            except Exception:
                 # Read timeout, return with empty data
                 return bytearray(0)
 
@@ -96,5 +96,5 @@ class SerialConnectorCPC(Connector):
         del self.read_buff[:]
         try:
             self.endpoint = self.cpc.open_endpoint(self.endpoint_id, self.tx_window_size)
-        except Exception as e:
-            raise ConnectorException(e)
+        except Exception as err:
+            raise ConnectorException(err) from err

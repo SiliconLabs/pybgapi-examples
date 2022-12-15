@@ -32,9 +32,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.util import BtMeshApp
 class FactoryReset(BtMeshApp):
       """ Implementation of the general APIs. """
-      def __init__(self, parser, **kwargs):
-            super().__init__(parser=parser,**kwargs)
-
       # Node reset
       def node_reset(self):
             """ Initiate node reset."""

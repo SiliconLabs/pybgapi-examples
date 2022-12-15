@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""
-Temperature Measurement NCP-host Example Application.
+""" Roaming NCP-host Example Application for peripheral devices.
 """
 
-# Copyright 2021 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -32,61 +31,76 @@ import time
 import bgapi
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-from common.conversion import Ieee11073Float
 from common.util import ArgumentParser, BluetoothApp, get_connector
 
-# Constants
-# Unit definitions for temperature measurement
-TEMPERATURE_UNIT_CELSIUS = b"\x00"
-TEMPERATURE_UNIT_FAHRENHEIT = b"\x01"
-# Temperature measurement characteristic indication period in seconds
-INDICATION_PERIOD = 1.0
+# Heart rate measurement characteristic notification period in seconds
+NOTIFICATION_PERIOD = 10.0
 # Characteristic values
-GATTDB_DEVICE_NAME = b"Thermometer Example"
+GATTDB_DEVICE_NAME = b"Heart Rate Sensor"
 GATTDB_MANUFACTURER_NAME_STRING = b"Silicon Labs"
-GATTDB_TEMPERATURE_TYPE = b"\x02" # Body
 
-class App(BluetoothApp):
-    """ Application derived from generic BluetoothApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
-        # This event indicates the device has started and the radio is ready.
-        # Do not call any stack command before receiving this boot event!
-        if evt == "bt_evt_system_boot":
-            # Init threading only once
-            if not hasattr(self, "indication_thread"):
-                self.indication_event = threading.Event()
-                self.indication_thread = threading.Thread(target=self.indication_task, daemon=True)
-                self.indication_thread.start()
-            self.indication_event.clear()
-            self.adv_handle = None
-            self.temperature = 0
-            self.gattdb_init()
-            self.adv_start()
+class HeartRateSensor(BluetoothApp):
+    """ Heart Rate Sensor derived from generic BluetoothApp. """
+    def __init__(self, connector, delete_bondings=False, **kwargs):
+        self.delete_bondings = delete_bondings
+        self.adv_handle = None
+        self.gattdb_heart_rate_measurement = None
+        self.notification_event = threading.Event()
+        self.notification_thread = threading.Thread(target=self.notification_task, daemon=True)
+        self.notification_thread.start()
+        super().__init__(connector, **kwargs)
+        # Dummy heart rate data derived from instance ID
+        self.heart_rate = self.id + 100
 
-        # This event indicates that a new connection was opened.
-        elif evt == "bt_evt_connection_opened":
-            print("Connection opened")
+    def bt_evt_system_boot(self, evt):
+        """ Bluetooth event callback """
+        # Check if external bonding database feature is available on the target
+        try:
+            self.lib.bt.sm.get_bonding_handles(0)
+        except bgapi.bglib.CommandFailedError as err:
+            if err.errorcode == 0xe: # Feature not available
+                self.log.error("External bonding database feature present in the target firmware.")
+            raise
+        self.notification_event.clear()
+        self.adv_handle = None
+        self.gattdb_init()
+        if self.delete_bondings:
+            # Delete bondings on first boot only.
+            self.delete_bondings = False
+            self.lib.bt.sm.delete_bondings()
+        self.lib.bt.sm.set_bondable_mode(1)
+        self.adv_start()
 
-        # This event indicates that a connection was closed.
-        elif evt == "bt_evt_connection_closed":
-            self.indication_event.clear()
-            print("Connection closed")
-            self.adv_start()
+    def bt_evt_connection_opened(self, evt):
+        """ Bluetooth event callback """
+        self.log.info("Connection opened: %s", evt.address)
 
-        # Events triggered by the remote GATT client.
-        elif evt == "bt_evt_gatt_server_characteristic_status":
-            if evt.characteristic == self.gattdb_temperature_measurement:
-                if evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CLIENT_CONFIG:
-                    # The remote client requested the status change.
-                    if evt.client_config_flags == self.lib.bt.gatt_server.CLIENT_CONFIGURATION_DISABLE:
-                        print("Indication disabled.")
-                        self.indication_event.clear()
-                    else:
-                        print("Indication enabled.")
-                        self.indication_event.set()
-                elif evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CONFIRMATION:
-                    print("    indication sent.")
+    def bt_evt_connection_closed(self, evt):
+        """ Bluetooth event callback """
+        self.notification_event.clear()
+        self.log.info("Connection closed")
+        self.adv_start()
+
+    def bt_evt_connection_parameters(self, evt):
+        """ Bluetooth event callback """
+        if evt.security_mode != 0:
+            self.log.info("Bonded")
+
+    def bt_evt_sm_bonding_failed(self, evt):
+        """ Bluetooth event callback """
+        self.log.error("Bonding failed with reason 0x%x", evt.reason)
+
+    def bt_evt_gatt_server_characteristic_status(self, evt):
+        """ Bluetooth event callback """
+        if evt.characteristic == self.gattdb_heart_rate_measurement:
+            if evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CLIENT_CONFIG:
+                # The remote client requested the status change.
+                if evt.client_config_flags == self.lib.bt.gatt_server.CLIENT_CONFIGURATION_DISABLE:
+                    self.log.info("Notification disabled.")
+                    self.notification_event.clear()
+                else:
+                    self.log.info("Notification enabled.")
+                    self.notification_event.set()
 
     def gattdb_init(self):
         """ Initialize GATT database. """
@@ -162,36 +176,24 @@ class App(BluetoothApp):
         )
         self.lib.bt.gattdb.start_service(session, service)
 
-        # Health Thermometer
+        # Heart Rate Service
         _, service = self.lib.bt.gattdb.add_service(
             session,
             self.lib.bt.gattdb.SERVICE_TYPE_PRIMARY_SERVICE,
             self.lib.bt.gattdb.SERVICE_PROPERTY_FLAGS_ADVERTISED_SERVICE,
-            b"\x09\x18"
+            b"\x0D\x18"
         )
-        # Temperature Measurement
-        _, self.gattdb_temperature_measurement = self.lib.bt.gattdb.add_uuid16_characteristic(
+        # Heart Rate Measurement
+        _, self.gattdb_heart_rate_measurement = self.lib.bt.gattdb.add_uuid16_characteristic(
             session,
             service,
-            self.lib.bt.gattdb.CHARACTERISTIC_PROPERTIES_CHARACTERISTIC_INDICATE,
+            self.lib.bt.gattdb.CHARACTERISTIC_PROPERTIES_CHARACTERISTIC_NOTIFY,
+            self.lib.bt.gattdb.SECURITY_REQUIREMENTS_BONDED_NOTIFY,
             0,
-            0,
-            b"\x1C\x2A",
+            b"\x37\x2A",
             self.lib.bt.gattdb.VALUE_TYPE_FIXED_LENGTH_VALUE,
-            5,
-            b"\x00"*5
-        )
-        # Temperature Type
-        self.lib.bt.gattdb.add_uuid16_characteristic(
-            session,
-            service,
-            self.lib.bt.gattdb.CHARACTERISTIC_PROPERTIES_CHARACTERISTIC_READ,
-            0,
-            0,
-            b"\x1D\x2A",
-            self.lib.bt.gattdb.VALUE_TYPE_FIXED_LENGTH_VALUE,
-            len(GATTDB_TEMPERATURE_TYPE),
-            GATTDB_TEMPERATURE_TYPE
+            2,
+            b"\x00"*2
         )
         self.lib.bt.gattdb.start_service(session, service)
 
@@ -216,36 +218,45 @@ class App(BluetoothApp):
             self.adv_handle,
             self.lib.bt.legacy_advertiser.CONNECTION_MODE_CONNECTABLE)
 
-    def send_indication(self):
-        """ Send indication with dummy temperature data. """
-        print("Sending {} C...".format(self.temperature))
+    def send_notification(self):
+        """ Send notification with dummy data. """
+        self.log.info("Sending %d BPM", self.heart_rate)
+        # The characteristic value consists of 1 byte Flags Field and 1 byte Measurement Value Field
+        value = bytes([0, self.heart_rate])
+        self.lib.bt.gatt_server.notify_all(self.gattdb_heart_rate_measurement, value)
 
-        # Convert temperature value.
-        value = TEMPERATURE_UNIT_CELSIUS + Ieee11073Float(self.temperature).to_bytes()
-        self.lib.bt.gatt_server.notify_all(self.gattdb_temperature_measurement, value)
-
-        # Increment dummy temperature data.
-        self.temperature += 1
-        if self.temperature > 25:
-            self.temperature = 0
-
-    def indication_task(self):
+    def notification_task(self):
         """ Indication task executed in its own thread. """
         while True:
-            self.indication_event.wait()
+            self.notification_event.wait()
             try:
-                self.send_indication()
+                self.send_notification()
             except bgapi.bglib.CommandError:
                 # Ignore command error i.e. if the device resets
                 pass
-            time.sleep(INDICATION_PERIOD)
+            time.sleep(NOTIFICATION_PERIOD)
+
+def main():
+    """ Main function. """
+    parser = ArgumentParser(description=__doc__, single_mode=False)
+    parser.add_argument(
+        "-d",
+        action="store_true",
+        help="Delete bondings")
+    args = parser.parse_args()
+    connector = get_connector(args)
+    # Instantiate an application for every connector.
+    apps = [HeartRateSensor(conn, args.d) for conn in connector]
+    for app in apps:
+        app.start()
+    # Catch KeyboardInterrupt
+    try:
+        while True:
+            time.sleep(60)
+    except KeyboardInterrupt:
+        for app in apps:
+            app.stop()
 
 # Script entry point.
 if __name__ == "__main__":
-    parser = ArgumentParser(description=__doc__)
-    args = parser.parse_args()
-    connector = get_connector(args)
-    # Instantiate the application.
-    app = App(connector)
-    # Running the application blocks execution until it terminates.
-    app.run()
+    main()

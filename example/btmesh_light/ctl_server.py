@@ -37,8 +37,8 @@ from lightness_server import LightnessServer
 from bgapi.bglib import CommandFailedError
 from dataclasses import dataclass
 class CTLServer(LightnessServer):
-    def __init__(self, parser, **kwargs):
-        super().__init__(parser=parser,**kwargs)
+    def __init__(self, connector, **kwargs):
+        super().__init__(connector=connector, **kwargs)
         # Copy of transition delay parameter, needed for delayed ctl request
         self.delayed_ctl_trans = 0
         # CTL server key to store data to nvm

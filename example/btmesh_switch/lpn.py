@@ -34,8 +34,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.util import BtMeshApp
 
 class LPN(BtMeshApp):
-    def __init__(self, parser, **kwargs):
-        super().__init__(parser=parser,**kwargs)
+    def __init__(self, connector, **kwargs):
+        super().__init__(connector=connector, **kwargs)
         # Flag for indicating that LPN feature is active
         self.lpn_active = 0
         # Flag for proxy connection 

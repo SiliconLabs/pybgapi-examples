@@ -25,13 +25,12 @@ Thermometer Client NCP-host Example Application.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import argparse
 import os.path
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.conversion import Ieee11073Float
-from common.util import BluetoothApp, find_service_in_advertisement
+from common.util import ArgumentParser, BluetoothApp, get_connector, find_service_in_advertisement
 
 # Constants
 HEALTH_THERMOMETER_SERVICE = b"\x09\x18"
@@ -68,7 +67,7 @@ class App(BluetoothApp):
                 CONN_MAX_CE_LENGTH)
             # Start scanning - looking for thermometer devices
             self.lib.bt.scanner.start(
-                self.lib.bt.gap.PHY_PHY_1M,
+                self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
                 self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
             self.conn_state = "scanning"
             self.conn_properties = {}
@@ -138,7 +137,7 @@ class App(BluetoothApp):
                 if len(self.conn_properties) < SL_BT_CONFIG_MAX_CONNECTIONS:
                     # start scanning again to find new devices
                     self.lib.bt.scanner.start(
-                        self.lib.bt.gap.PHY_PHY_1M,
+                        self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
                         self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
                     self.conn_state = "scanning"
                 else:
@@ -151,7 +150,7 @@ class App(BluetoothApp):
             if self.conn_state != "scanning":
                 # start scanning again to find new devices
                 self.lib.bt.scanner.start(
-                    self.lib.bt.gap.PHY_PHY_1M,
+                    self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
                     self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
                 self.conn_state = "scanning"
 
@@ -177,8 +176,10 @@ class App(BluetoothApp):
 
 # Script entry point.
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__)
+    args = parser.parse_args()
+    connector = get_connector(args)
     # Instantiate the application.
-    app = App(parser=parser)
+    app = App(connector)
     # Running the application blocks execution until it terminates.
     app.run()

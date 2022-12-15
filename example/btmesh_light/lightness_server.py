@@ -35,8 +35,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from onoff_server import OnOffServer
 from bgapi.bglib import CommandFailedError
 class LightnessServer(OnOffServer):
-    def __init__(self, parser, **kwargs):
-        super().__init__(parser=parser,**kwargs)
+    def __init__(self, connector, **kwargs):
+        super().__init__(connector=connector, **kwargs)
         # Current lightness level
         self.current_level = 0
         # Delayed Lightness transition time

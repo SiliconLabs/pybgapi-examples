@@ -33,8 +33,8 @@ from common.util import BtMeshApp
 
 class OnOffClient(BtMeshApp):
     """ Implement Generic OnOff Client Model specific APIs."""
-    def __init__(self, parser, **kwargs):
-        super().__init__(parser=parser,**kwargs)
+    def __init__(self, connector, **kwargs):
+        super().__init__(connector=connector, **kwargs)
         # On/off transaction identifier
         self.onoff_trid = 0
         # No flags used for message

@@ -25,12 +25,11 @@ BtMesh Empty NCP-host Example Application.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import argparse
 import os.path
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-from common.util import BtMeshApp
+from common.util import ArgumentParser, BtMeshApp, get_connector
 
 # Advertising options
 PB_ADV = 0x1
@@ -52,7 +51,9 @@ class App(BtMeshApp):
 
 # Script entry point.
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__)
+    args = parser.parse_args()
+    connector = get_connector(args)
     # Instantiate and run application.
-    app = App(parser=parser)
+    app = App(connector)
     app.run()

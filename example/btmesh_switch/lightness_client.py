@@ -33,8 +33,8 @@ from common.util import BtMeshApp
 
 class LightnessClient(BtMeshApp):
     """ Implementation of the Light Lightness Client Model specific APIs. """
-    def __init__(self, parser, **kwargs):
-        super().__init__(parser=parser,**kwargs)
+    def __init__(self, connector, **kwargs):
+        super().__init__(connector=connector, **kwargs)
         # Lightness transaction identifier
         self.lightness_trid = 0
         # Lightness level converted from percentage to actual value, range 0..65535

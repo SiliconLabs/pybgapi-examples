@@ -74,17 +74,10 @@ continues:
 - Programmatically calling the `stop` method.
 - Upon BGAPI command failure.
 
-### ConnectorApp
-
-This class extends the *GenericApp* with logging, CLI argument parsing and automatic connector
-creation. The connector is initialized with the default connection parameters. Therefore, this class
-is optimal for Silicon Labs development kits. Adjustments might be necessary for custom boards.
-The available connector types are serial, socket, and CPC (Linux only).
-
-Invoke the help message of the examples to get detailed information about the CLI options.
-```
-python3 bt_empty/app.py -h
-```
+The execution can be started in an asynchronous mode too by calling the `start` method. It starts
+the `run` method in its own thread and returns immediately. The main thread will terminate once all
+the non-daemon threads are terminated. Please note that in this case the `KeyboardInterrupt` has to
+be handled in the main thread. See the [Troubleshooting](#troubleshooting) chapter for details.
 
 ### BluetoothApp
 
@@ -143,6 +136,15 @@ it will be removed.
 The *BtMeshApp* uses both the Bluetooth [sl_bt.xapi](api/sl_bt.xapi) and Bluetooth mesh
 [sl_btmesh.xapi](api/sl_btmesh.xapi) XAPI files by default in its constructor.
 
+## Argument Parser
+
+The `ArgumentParser` class is derived from the standard `argparse.ArgumentParser` class. This class
+has default arguments optimized for the generic application classes to set up connection parameters
+and the logging level. In combination with the `get_connector` method, it's supposed to set up the
+host-to-target connection effortlessly. It supports single connection (default) and multi connection
+mode too. Invoke the example scripts with the `-h` switch to get more details about the available
+options. Custom arguments can be added as documented in the standard `argparse.ArgumentParser` class.
+
 ## Examples
 
 All examples in this repo reproduce the behavior of existing C examples from the GSDK.
@@ -152,6 +154,7 @@ See the documentation of the original C examples to get more information.
 
 - [Bluetooth - Empty](example/bt_empty)
 - [Bluetooth - iBeacon](example/bt_ibeacon)
+- [Bluetooth - Roaming](example/bt_roaming)
 - [Bluetooth - Thermometer](example/bt_thermometer)
 - [Bluetooth - Thermometer Client](example/bt_thermometer_client)
 - [Bluetooth mesh - Empty](example/btmesh_empty)
@@ -160,6 +163,7 @@ See the documentation of the original C examples to get more information.
 
 To create a custom Bluetooth application, follow these steps:
 - Import the [util.py](common/util.py) module.
+- Get a connector instance using the `get_connector` function.
 - Create your own application class inherited from the `BluetoothApp` class.
 - Override its `event_handler` method.
 - Instantiate your application class.
@@ -229,37 +233,29 @@ Flash the **Bluetooth - NCP** example on your development board.
 
 #### Observed Behavior
 
-Code after app.run() call executes only after the app terminates.
+Code after `app.run()` call executes only after the app terminates.
 
 #### Explanation
 
-The *GenericApp* class has been designed as a standalone event-driven application. The way to
-extend this application with custom business logic depends on the actual use case.
+The *GenericApp* class can be executed both in synchronous (blocking) mode and asynchronous
+(non-blocking) mode. Most examples use the synchronous mode per default.
 
 #### Solution
 
-1. For periodic tasks (e.g., polling a sensor periodically) the *PeriodicTimer* class can be used.
-    A *PeriodicTimer* object can call a target function periodically, as the following example
-    shows.
-    ```python
-    from common.util import BluetoothApp, PeriodicTimer
+Use the `start` method of the app instead of the `run` method. See the following example for a
+minimal working code.
 
-    def periodic_task():
-        print("Hello World!")
-
-    app = BluetoothApp()
-    task = PeriodicTimer(period=1, target=periodic_task)
-    task.start()
-    app.run()
-    ```
-
-2. You can also run the application in a separate thread, as the following example shows.
-    ```python
-    from threading import Thread
-    from common.util import BluetoothApp
-
-    app = BluetoothApp()
-    thread = Thread(target=app.run)
-    thread.start()
-    print("Hello World!")
-    ```
+```python
+import time
+from common.util import BluetoothApp, get_device_list
+app = BluetoothApp(get_device_list()[0])
+app.start()
+# Place your custom code here
+print("Hello World!")
+# Catch KeyboardInterrupt
+try:
+    while True:
+        time.sleep(60)
+except KeyboardInterrupt:
+    app.stop()
+```

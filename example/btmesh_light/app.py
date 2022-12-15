@@ -25,13 +25,11 @@ BtMesh NCP Light Server Example Application.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import argparse
 import os.path
 import sys
 import threading
 import struct
 
-sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from lighting_server_gui import MainPage
 from ctl_server import CTLServer
 from onoff_server import OnOffServer
@@ -39,6 +37,8 @@ from lightness_server import LightnessServer
 from factory_reset import FactoryReset
 from bgapi.bglib import CommandFailedError
 from dataclasses import dataclass, fields
+sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
+from common.util import ArgumentParser, get_connector
 
 # Advertising options
 PB_ADV = 0x1
@@ -178,9 +178,11 @@ class App(CTLServer, FactoryReset):
         
 # Script entry point.
 if __name__ == "__main__":
-    """ Instantiate and run application."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    app = App(parser=parser)
+    # Instantiate and run application.
+    parser = ArgumentParser(description=__doc__)
+    args = parser.parse_args()
+    connector = get_connector(args)
+    app = App(connector=connector)
     t_gui = threading.Thread(target=MainPage.lighting_server_gui_thread, args=[app], daemon=True)
     t_gui.setName("Gui_thread")
     t_gui.start()

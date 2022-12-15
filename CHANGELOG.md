@@ -3,6 +3,28 @@
 The releases in this repo are based on particular [GSDK releases](https://github.com/SiliconLabs/gecko_sdk/releases).
 The version numbers here reflect the GSDK version that the release is based on.
 
+## [4.2.0] - 2022-12-15
+
+### Added
+- bt_roaming example
+
+### Changed
+- Update BGAPI version to 5.0.0.
+- `GenericApp` class derived from `threading.Thread`, therefore it's easier to
+  start `GenericApp` instances in their own thread.
+- Events can be handled in their dedicated event callback methods in addition to
+  the generic `event_handler` method of the `GenericApp`.
+- `ConnectorApp` class removed, its functionality moved to `ArgumentParser` class
+  and`get_connector` functions.
+- `BluetoothApp` and `BtmeshApp` classes derived directly from `GenericApp`,
+  they need a connector instance in their constructor.
+- `PeriodicTimer` replaced with threading objects in `bt_thermometer` example.
+- Timestamp added to logging messages.
+- Libcpc_wrapper script updated.
+
+### Removed
+- `PeriodicTimer` helper class
+
 ## [4.1.2] - 2022-09-30
 ### Added
 - btmesh_light and btmesh_switch examples.
@@ -26,5 +48,6 @@ The version numbers here reflect the GSDK version that the release is based on.
 ### Added
 - Initial public release.
 
+[4.2.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.2.0
 [4.1.2]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.1.2
 [4.0.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.0.0
