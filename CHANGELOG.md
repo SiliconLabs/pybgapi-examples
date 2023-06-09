@@ -3,6 +3,17 @@
 The releases in this repo are based on particular [GSDK releases](https://github.com/SiliconLabs/gecko_sdk/releases).
 The version numbers here reflect the GSDK version that the release is based on.
 
+## [4.3.0] - 2023-06-09
+
+### Fixed
+- Various issues with CPC reset
+
+### Changed
+- Update BGAPI version to 6.0.0.
+
+### Removed
+- libcpc_wrapper.py. Install libcpc module from the [cpc-daemon](https://github.com/SiliconLabs/cpc-daemon) repo.
+
 ## [4.2.0] - 2022-12-15
 
 ### Added
@@ -48,6 +59,7 @@ The version numbers here reflect the GSDK version that the release is based on.
 ### Added
 - Initial public release.
 
+[4.3.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.3.0
 [4.2.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.2.0
 [4.1.2]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.1.2
 [4.0.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.0.0

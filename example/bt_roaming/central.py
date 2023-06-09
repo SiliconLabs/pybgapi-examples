@@ -56,7 +56,7 @@ DISCOVERY_PERIOD = 30
 RSSI_MEASUREMENT_PERIOD = 10
 # Connection is closed if connection RSSI value drops below this value in dBm
 # A value of -127 or smaller means that the threshold is turned off.
-RSSI_DISCONNECT_THRESHOLD = -20
+RSSI_DISCONNECT_THRESHOLD = -127
 # Path of the bonding database file
 BONDING_DB_PATH = "bonding_db.json"
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<api device_id="5" device_name="btmesh" version="4.2.0">
+<api device_id="5" device_name="btmesh" version="6.0.0">
     <datatypes>
         <datatype base="uint16" name="errorcode" length="2"/>
         <datatype base="int16" name="int16" length="2"/>
@@ -311,6 +311,20 @@
                 <param datatype="uint8" name="phy" type="uint8"/>
             </returns>
         </command>
+        <command index="37" name="set_provisioning_algorithms" >
+            <params>
+                <param datatype="uint16" name="algorithms" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="38" name="init_provisioning_records" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <command index="40" name="set_unprov_beaconing_adv_interval" >
             <params>
                 <param datatype="uint16" name="adv_interval_min" type="uint16"/>
@@ -336,6 +350,43 @@
             </params>
             <returns>
                 <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="32" name="get_local_model_metadata_page" >
+            <params>
+                <param datatype="uint8" name="page" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="49" name="save_proxy_solicitation_rpl" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="50" name="get_proxy_solicitation_rpl_status" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="total_entries" type="uint16"/>
+                <param datatype="uint16" name="unsaved_entries" type="uint16"/>
+            </returns>
+        </command>
+        <command index="51" name="set_oob_uri" >
+            <params>
+                <param datatype="uint8array" name="uri" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="52" name="get_oob_uri" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8array" name="uri" type="uint8array"/>
             </returns>
         </command>
         <event index="0" name="initialized">
@@ -473,6 +524,17 @@
                 <param datatype="errorcode" name="result" type="uint16"/>
             </params>
         </event>
+        <event index="25" name="local_model_metadata_page">
+            <params>
+                <param datatype="uint8" name="page" type="uint8"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
+            </params>
+        </event>
+        <event index="26" name="local_model_metadata_page_end">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </params>
+        </event>
         <event index="22" name="start_received">
             <params>
                 <param datatype="uint8" name="algorithm" type="uint8"/>
@@ -482,6 +544,18 @@
                 <param datatype="uint8" name="authentication_size" type="uint8"/>
             </params>
         </event>
+        <event index="23" name="address_updated">
+            <params>
+                <param datatype="uint16" name="new_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="24" name="dcd_updated">
+            <params/>
+        </event>
+        <enums name="algorithm_flag">
+            <enum name="algorithm_flag_ecdh_p256_cmac_aes128_aes_ccm" value="0x1"/>
+            <enum name="algorithm_flag_ecdh_p256_hmac_sha256_aes_ccm" value="0x2"/>
+        </enums>
         <enums name="auth_method_flag">
             <enum name="auth_method_flag_none" value="0x1"/>
             <enum name="auth_method_flag_static" value="0x2"/>
@@ -529,6 +603,16 @@
             <enum name="identity" value="0x8042"/>
             <enum name="nettx" value="0x8024"/>
         </enums>
+        <defines name="message_flags">
+            <define name="message_flag_none" value="0x0"/>
+            <define name="message_flag_reply" value="0x1"/>
+            <define name="message_flag_multicast_reply" value="0x2"/>
+            <define name="message_flag_ttl0" value="0x4"/>
+            <define name="message_flag_segtrans" value="0x10"/>
+            <define name="message_flag_friendcred" value="0x20"/>
+            <define name="message_flag_extended" value="0x40"/>
+            <define name="message_flag_long_delay" value="0x80"/>
+        </defines>
     </class>
     <class index="21" name="prov">
         <command index="0" name="init" >
@@ -573,6 +657,15 @@
             <params>
                 <param datatype="uuid_128" name="uuid" type="uuid_128"/>
                 <param datatype="uint8" name="connection" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="127" name="provision_remote_device" >
+            <params>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint16" name="server" type="uint16"/>
             </params>
             <returns>
                 <param datatype="errorcode" name="result" type="uint16"/>
@@ -681,6 +774,30 @@
                 <param datatype="uint16" name="key" type="uint16"/>
                 <param datatype="uint8" name="status" type="uint8"/>
                 <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="18" name="set_key_refresh_failure" >
+            <params>
+                <param datatype="uint16" name="key" type="uint16"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="16" name="phase_timeout_get" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="phase_timeout_s" type="uint32"/>
+            </returns>
+        </command>
+        <command index="17" name="phase_timeout_set" >
+            <params>
+                <param datatype="uint32" name="phase_timeout_s" type="uint32"/>
             </params>
             <returns>
                 <param datatype="errorcode" name="result" type="uint16"/>
@@ -826,6 +943,29 @@
                 <param datatype="uint8" name="match" type="uint8"/>
             </returns>
         </command>
+        <command index="28" name="get_provisioning_records_list" >
+            <params>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="29" name="get_provisioning_record_data" >
+            <params>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint16" name="record" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="30" name="init_provisioning_records" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <event index="0" name="initialized">
             <params>
                 <param datatype="uint8" name="networks" type="uint8"/>
@@ -920,6 +1060,7 @@
                 <param datatype="uint16" name="key" type="uint16"/>
                 <param datatype="uint8" name="phase" type="uint8"/>
                 <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint8" name="failure" type="uint8"/>
             </params>
         </event>
         <event index="22" name="key_refresh_complete">
@@ -943,6 +1084,22 @@
         <event index="27" name="initialization_failed">
             <params>
                 <param datatype="errorcode" name="result" type="uint16"/>
+            </params>
+        </event>
+        <event index="28" name="provisioning_records_list">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint8array" name="list" type="uint8array"/>
+            </params>
+        </event>
+        <event index="29" name="provisioning_record_data">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint16" name="record" type="uint16"/>
+                <param datatype="uint8" name="final" type="uint8"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
             </params>
         </event>
         <event index="30" name="start_sent">
@@ -1031,6 +1188,16 @@
                 <param datatype="errorcode" name="result" type="uint16"/>
             </returns>
         </command>
+        <command index="6" name="send_solicitation" >
+            <params>
+                <param datatype="uint8" name="enc_netkey_index" type="uint8"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <event index="0" name="connected">
             <params>
                 <param datatype="uint32" name="handle" type="uint32"/>
@@ -1049,6 +1216,115 @@
                 <param datatype="uint16" name="count" type="uint16"/>
             </params>
         </event>
+    </class>
+    <class index="1" name="silabs_config_client">
+        <command index="0" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="set_tx" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="tx_phy" type="uint8"/>
+                <param datatype="uint32" name="tx_options_bitmap" type="uint32"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="get_tx" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="set_model_enable" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+                <param datatype="uint8" name="enable" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="get_model_enable" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="set_network_pdu" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint16" name="pdu_max_size" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="get_network_pdu" >
+            <params>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="7" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="1" name="tx_status">
+            <params>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="tx_phy" type="uint8"/>
+                <param datatype="uint32" name="tx_options_bitmap" type="uint32"/>
+            </params>
+        </event>
+        <event index="2" name="model_status">
+            <params>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="elem_index" type="uint8"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+                <param datatype="uint16" name="value" type="uint16"/>
+            </params>
+        </event>
+        <event index="3" name="network_pdu_status">
+            <params>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint16" name="pdu_max_size" type="uint16"/>
+            </params>
+        </event>
+        <enums name="status">
+            <enum name="status_success" value="0x0"/>
+            <enum name="status_unknown_cmd" value="0x1"/>
+            <enum name="status_invalid_parameter" value="0x2"/>
+            <enum name="status_does_not_exist" value="0x3"/>
+        </enums>
     </class>
     <class index="25" name="vendor_model">
         <command index="0" name="send" >
@@ -1167,6 +1443,7 @@
                 <param datatype="int8" name="va_index" type="int8"/>
                 <param datatype="uint16" name="appkey_index" type="uint16"/>
                 <param datatype="uint8" name="nonrelayed" type="uint8"/>
+                <param datatype="uint8" name="message_flags" type="uint8"/>
                 <param datatype="uint8" name="opcode" type="uint8"/>
                 <param datatype="uint8" name="final" type="uint8"/>
                 <param datatype="uint8array" name="payload" type="uint8array"/>
@@ -1176,10 +1453,23 @@
             <params>
                 <param datatype="errorcode" name="result" type="uint16"/>
                 <param datatype="uint16" name="handle" type="uint16"/>
+                <param datatype="uint8" name="message_flags" type="uint8"/>
             </params>
         </event>
     </class>
     <class index="26" name="health_client">
+        <command index="7" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <command index="0" name="get" >
             <params>
                 <param datatype="uint16" name="server_address" type="uint16"/>
@@ -2233,6 +2523,79 @@
                 <param datatype="uint8" name="value" type="uint8"/>
             </returns>
         </command>
+        <command index="56" name="get_private_identity" >
+            <params>
+                <param datatype="uint16" name="get_netkey_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8" name="value" type="uint8"/>
+            </returns>
+        </command>
+        <command index="57" name="set_private_identity" >
+            <params>
+                <param datatype="uint16" name="set_netkey_index" type="uint16"/>
+                <param datatype="uint8" name="set_value" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8" name="value" type="uint8"/>
+            </returns>
+        </command>
+        <command index="58" name="set_adv_provisioning_bearer_timing" >
+            <params>
+                <param datatype="uint16" name="pbadv_interval_ms" type="uint16"/>
+                <param datatype="uint16" name="pbadv_variation_ms" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="59" name="update_keyrefresh_phase" >
+            <params>
+                <param datatype="uint16" name="network_key_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+            </returns>
+        </command>
+        <command index="60" name="send_private_beacons" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="61" name="set_adv_params" >
+            <params>
+                <param datatype="uint16" name="adv_interval_min" type="uint16"/>
+                <param datatype="uint16" name="adv_interval_max" type="uint16"/>
+                <param datatype="uint8" name="adv_repeat_packets" type="uint8"/>
+                <param datatype="uint8" name="adv_channel_map" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="62" name="set_scan_params" >
+            <params>
+                <param datatype="uint16" name="scan_interval" type="uint16"/>
+                <param datatype="uint16" name="scan_window" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="63" name="adv_use_random_address" >
+            <params>
+                <param datatype="uint8" name="address_type" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <event index="0" name="local_heartbeat_subscription_complete">
             <params>
                 <param datatype="uint16" name="count" type="uint16"/>
@@ -2924,6 +3287,15 @@
                 <param datatype="uint32" name="handle" type="uint32"/>
             </returns>
         </command>
+        <command index="48" name="set_request_timeout_for_node" >
+            <params>
+                <param datatype="uint16" name="lpn_address" type="uint16"/>
+                <param datatype="uint16" name="timeout_ms" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <event index="0" name="request_modified">
             <params>
                 <param datatype="uint32" name="handle" type="uint32"/>
@@ -3124,6 +3496,424 @@
                 <param datatype="uint32" name="handle" type="uint32"/>
             </params>
         </event>
+        <event index="28" name="obo_ack_received">
+            <params>
+                <param datatype="uint16" name="lpn_addr" type="uint16"/>
+                <param datatype="uint16" name="friend_addr" type="uint16"/>
+            </params>
+        </event>
+    </class>
+    <class index="40" name="mbt_client">
+        <command index="9" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="max_servers" type="uint16"/>
+                <param datatype="uint16" name="max_blocks" type="uint16"/>
+                <param datatype="uint16" name="max_chunks_per_block" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="0" name="setup" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint16" name="timeout_base" type="uint16"/>
+                <param datatype="uint8" name="supported_transfer_modes" type="uint8"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="multicast_threshold" type="uint16"/>
+                <param datatype="uint8array" name="servers" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="query_information" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="13" name="get_server_status" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="current_procedure_status" type="uint8"/>
+                <param datatype="uint16" name="rx_blocks" type="uint16"/>
+                <param datatype="uint16" name="rx_chunks" type="uint16"/>
+            </returns>
+        </command>
+        <command index="14" name="add_server" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="start_transfer" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="block_size_log" type="uint8"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="start_block" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="chunk_size" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint32" name="block_size" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="send_chunk_request_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="query_block_status" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="get_status" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint16" name="total_blocks" type="uint16"/>
+                <param datatype="uint16" name="total_chunks" type="uint16"/>
+            </returns>
+        </command>
+        <command index="10" name="get_transfer_status" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="11" name="cancel_transfer" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="12" name="abort" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="server_information_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="min_block_size_log" type="uint8"/>
+                <param datatype="uint8" name="max_block_size_log" type="uint8"/>
+                <param datatype="uint16" name="max_chunks" type="uint16"/>
+                <param datatype="uint16" name="max_chunk_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="4" name="query_information_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="block_size_log_min" type="uint8"/>
+                <param datatype="uint8" name="block_size_log_max" type="uint8"/>
+                <param datatype="uint16" name="max_chunk_size_min" type="uint16"/>
+                <param datatype="uint16" name="max_chunks_min" type="uint16"/>
+                <param datatype="uint8" name="supported_transfer_modes" type="uint8"/>
+                <param datatype="uint8" name="common_transfer_modes" type="uint8"/>
+            </params>
+        </event>
+        <event index="1" name="server_transfer_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint8" name="block_size_log" type="uint8"/>
+                <param datatype="uint8array" name="blocks_not_received" type="uint8array"/>
+            </params>
+        </event>
+        <event index="5" name="start_transfer_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+        </event>
+        <event index="3" name="server_block_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8array" name="missing_chunks" type="uint8array"/>
+            </params>
+        </event>
+        <event index="6" name="start_block_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint32" name="block_size" type="uint32"/>
+            </params>
+        </event>
+        <event index="7" name="send_chunk_request">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint32" name="offset" type="uint32"/>
+                <param datatype="uint16" name="length" type="uint16"/>
+            </params>
+        </event>
+        <event index="12" name="server_partial_block_report">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8array" name="missing_chunks" type="uint8array"/>
+            </params>
+        </event>
+        <event index="8" name="send_chunks_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+        </event>
+        <event index="9" name="query_block_status_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="block_complete" type="uint8"/>
+                <param datatype="uint8" name="transfer_complete" type="uint8"/>
+            </params>
+        </event>
+        <event index="10" name="tx_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+        </event>
+        <event index="11" name="server_failed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="timeout" type="uint8"/>
+                <param datatype="uint8" name="error" type="uint8"/>
+            </params>
+        </event>
+        <event index="13" name="transfer_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+        </event>
+        <enums name="server_status">
+            <enum name="server_status_done" value="0x0"/>
+            <enum name="server_status_in_progress" value="0x1"/>
+            <enum name="server_status_error" value="0x2"/>
+            <enum name="server_status_successfully_complete" value="0x3"/>
+        </enums>
+        <enums name="transfer_mode">
+            <enum name="mbt_transfer_mode_none" value="0x0"/>
+            <enum name="mbt_transfer_mode_push" value="0x1"/>
+            <enum name="mbt_transfer_mode_pull" value="0x2"/>
+            <enum name="mbt_transfer_mode_both" value="0x3"/>
+        </enums>
+    </class>
+    <class index="41" name="mbt_server">
+        <command index="2" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="min_block_size_log" type="uint8"/>
+                <param datatype="uint8" name="max_block_size_log" type="uint8"/>
+                <param datatype="uint16" name="max_chunks_per_block" type="uint16"/>
+                <param datatype="uint16" name="max_chunk_size" type="uint16"/>
+                <param datatype="uint32" name="max_blob_size" type="uint32"/>
+                <param datatype="uint8" name="supported_transfer_modes" type="uint8"/>
+                <param datatype="uint16" name="pull_mode_chunks_to_request" type="uint16"/>
+                <param datatype="uint16" name="pull_mode_retry_interval_ms" type="uint16"/>
+                <param datatype="uint16" name="pull_mode_retry_count" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="0" name="start" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint16" name="timeout_10s" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="get_transfer_status" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint8array" name="blocks_missing_mask" type="uint8array"/>
+            </returns>
+        </command>
+        <command index="3" name="transfer_complete" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="abort" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="set_pull_mode_parameters" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="pull_mode_retry_interval_ms" type="uint16"/>
+                <param datatype="uint16" name="pull_mode_retry_count" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="transfer_start_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="6" name="state_changed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="new_state" type="uint8"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint32" name="block_size" type="uint32"/>
+                <param datatype="uint16" name="chunk_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="0" name="transfer_start_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint8" name="block_size_log" type="uint8"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+            </params>
+        </event>
+        <event index="1" name="block_start">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint16" name="chunk_size" type="uint16"/>
+                <param datatype="uint16" name="block_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="3" name="chunk">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint32" name="total_offset" type="uint32"/>
+                <param datatype="uint32" name="block_offset" type="uint32"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
+            </params>
+        </event>
+        <event index="4" name="block_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint16" name="block_number" type="uint16"/>
+                <param datatype="uint16" name="block_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="7" name="transfer_cancel">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+            </params>
+        </event>
+        <event index="8" name="partial_block_report_tx_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="num_requested_chunks" type="uint16"/>
+                <param datatype="uint8array" name="requested_chunks" type="uint8array"/>
+            </params>
+        </event>
+        <enums name="status">
+            <enum name="status_success" value="0x0"/>
+            <enum name="status_invalid_block_number" value="0x1"/>
+            <enum name="status_wrong_block_size" value="0x2"/>
+            <enum name="status_wrong_chunk_size" value="0x3"/>
+            <enum name="status_invalid_state" value="0x4"/>
+            <enum name="status_invalid_parameter" value="0x5"/>
+            <enum name="status_wrong_object_id" value="0x6"/>
+            <enum name="status_storage_limit" value="0x7"/>
+            <enum name="status_unsupported_transfer_mode" value="0x8"/>
+            <enum name="status_internal_error" value="0x9"/>
+            <enum name="status_information_unavailable" value="0xa"/>
+            <enum name="status_malformed_message" value="0xfe"/>
+            <enum name="status_timeout" value="0xff"/>
+        </enums>
+        <enums name="phase">
+            <enum name="phase_inactive" value="0x0"/>
+            <enum name="phase_idle" value="0x1"/>
+            <enum name="phase_waiting_for_block" value="0x2"/>
+            <enum name="phase_waiting_for_chunks" value="0x3"/>
+            <enum name="phase_complete" value="0x4"/>
+            <enum name="phase_suspended" value="0x5"/>
+        </enums>
     </class>
     <class index="71" name="sensor_server">
         <command index="0" name="init" >
@@ -3545,6 +4335,151 @@
                 <param datatype="uint32" name="period_ms" type="uint32"/>
             </params>
         </event>
+    </class>
+    <class index="74" name="fw_update_client">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="get_info" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint8" name="first_index" type="uint8"/>
+                <param datatype="uint8" name="max_entries" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="9" name="get_update" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="10" name="start_update" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint8" name="update_ttl" type="uint8"/>
+                <param datatype="uint16" name="update_timeout_base" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="11" name="cancel_update" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="12" name="apply_update" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="13" name="check_metadata" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="info_status_current_fwid">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="index" type="uint8"/>
+                <param datatype="uint8" name="count" type="uint8"/>
+                <param datatype="uint8array" name="current_fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="1" name="info_status_update_uri">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="index" type="uint8"/>
+                <param datatype="uint8" name="count" type="uint8"/>
+                <param datatype="uint8array" name="update_uri" type="uint8array"/>
+            </params>
+        </event>
+        <event index="2" name="update_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+                <param datatype="uint8" name="additional_information" type="uint8"/>
+                <param datatype="uint16" name="update_timeout_base" type="uint16"/>
+                <param datatype="uint8" name="distributor_ttl" type="uint8"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+        </event>
+        <event index="10" name="metadata_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="additional_information" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+        </event>
+        <enums name="additional_info">
+            <enum name="additional_info_none" value="0x0"/>
+            <enum name="additional_info_dcd_change_no_rp" value="0x1"/>
+            <enum name="additional_info_dcd_change_rp_supported" value="0x2"/>
+            <enum name="additional_info_unprovisioned_after_update" value="0x3"/>
+        </enums>
     </class>
     <class index="76" name="lc_client">
         <command index="0" name="init" >
@@ -4266,6 +5201,135 @@
             </params>
         </event>
     </class>
+    <class index="87" name="fw_update_server">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="num_installed_fw" type="uint8"/>
+                <param datatype="uint8" name="max_metadata_len" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="check_fw_metadata_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="response_type" type="uint8"/>
+                <param datatype="uint8" name="additional_information" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="update_start_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="response_type" type="uint8"/>
+                <param datatype="uint8" name="additional_information" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="verify_fw_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="accept" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="distributor_self_update_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="response_type" type="uint8"/>
+                <param datatype="uint8" name="additional_information" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="check_fw_metadata_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+        </event>
+        <event index="3" name="update_start_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+        </event>
+        <event index="4" name="verify_fw_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+        </event>
+        <event index="5" name="apply">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="6" name="update_cancelled">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="7" name="distributor_self_update_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+            </params>
+        </event>
+        <enums name="update_phase">
+            <enum name="update_phase_idle" value="0x0"/>
+            <enum name="update_phase_transfer_error" value="0x1"/>
+            <enum name="update_phase_transfer_in_progress" value="0x2"/>
+            <enum name="update_phase_verifying_update" value="0x3"/>
+            <enum name="update_phase_verification_success" value="0x4"/>
+            <enum name="update_phase_verification_failed" value="0x5"/>
+            <enum name="update_phase_apply_in_progress" value="0x6"/>
+        </enums>
+        <enums name="update_status">
+            <enum name="update_status_success" value="0x0"/>
+            <enum name="update_status_out_of_resources" value="0x1"/>
+            <enum name="update_status_wrong_phase" value="0x2"/>
+            <enum name="update_status_internal_error" value="0x3"/>
+            <enum name="update_status_wrong_fw_index" value="0x4"/>
+            <enum name="update_status_metadata_check_failed" value="0x5"/>
+            <enum name="update_status_temporarily_unable" value="0x6"/>
+            <enum name="update_status_blob_transfer_busy" value="0x7"/>
+        </enums>
+        <enums name="update_start_response_type">
+            <enum name="update_start_response_type_accept" value="0x0"/>
+            <enum name="update_start_response_type_fw_already_exists" value="0x1"/>
+            <enum name="update_start_response_type_reject_out_of_resources" value="0x2"/>
+            <enum name="update_start_response_type_reject_internal_error" value="0x3"/>
+            <enum name="update_start_response_type_reject_metadata_check_failed" value="0x4"/>
+            <enum name="update_start_response_type_reject_temporarily_unable" value="0x5"/>
+        </enums>
+    </class>
     <class index="82" name="time_server">
         <command index="0" name="init" >
             <params>
@@ -4598,6 +5662,1106 @@
             <enum name="time_role_client" value="0x3"/>
         </enums>
     </class>
+    <class index="88" name="fw_dist_server">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="max_node_list_size" type="uint16"/>
+                <param datatype="uint16" name="max_fw_entries" type="uint16"/>
+                <param datatype="uint32" name="max_fw_size" type="uint32"/>
+                <param datatype="uint32" name="total_store_size" type="uint32"/>
+                <param datatype="uint16" name="multicast_threshold" type="uint16"/>
+                <param datatype="uint8array" name="oob_supported_uri_scheme_names" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="upload_start_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="execute_distribution_step" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="upload_oob_start_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="status_code" type="uint8"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="9" name="set_upload_oob_metadata" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="10" name="set_upload_oob_image_size" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="11" name="set_upload_oob_progress" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="error" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+            </returns>
+        </command>
+        <command index="12" name="get_node_status_by_index" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="entry_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="retrieved_phase" type="uint8"/>
+                <param datatype="uint8" name="update_server_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_server_status" type="uint8"/>
+                <param datatype="uint8" name="transfer_progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </returns>
+        </command>
+        <command index="13" name="get_node_status_by_address" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="node_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="retrieved_phase" type="uint8"/>
+                <param datatype="uint8" name="update_server_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_server_status" type="uint8"/>
+                <param datatype="uint8" name="transfer_progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </returns>
+        </command>
+        <command index="14" name="delete_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="status" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="19" name="dist_start_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="status" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="20" name="set_multicast_threshold" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="multicast_threshold" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="15" name="delete_all_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="status" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="16" name="resume_rsp" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="status" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="nodes_added">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint16" name="total_nodes" type="uint16"/>
+                <param datatype="uint16" name="num_added_nodes" type="uint16"/>
+                <param datatype="uint8array" name="added_nodes" type="uint8array"/>
+            </params>
+        </event>
+        <event index="1" name="nodes_deleted">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="2" name="dist_start_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint8" name="apply_immediately" type="uint8"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+                <param datatype="uint16" name="timeout_base" type="uint16"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+            </params>
+        </event>
+        <event index="3" name="dist_cancel">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="4" name="dist_cancel_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="5" name="upload_start_metadata">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+        </event>
+        <event index="6" name="upload_start_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="8" name="upload_cancel">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="11" name="dist_state_changed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint16" name="num_active_nodes" type="uint16"/>
+            </params>
+        </event>
+        <event index="12" name="node_failed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="update_phase" type="uint8"/>
+                <param datatype="uint8" name="update_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_status" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+        </event>
+        <event index="13" name="upload_complete_metadata">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+        </event>
+        <event index="14" name="upload_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="15" name="upload_failed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="16" name="upload_oob_start_uri">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="uri" type="uint8array"/>
+            </params>
+        </event>
+        <event index="17" name="upload_oob_start_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="18" name="fw_delete_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="19" name="fw_delete_all_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="21" name="dist_suspend">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="22" name="resume_req">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uint16" name="app_index" type="uint16"/>
+                <param datatype="uint16" name="ttl" type="uint16"/>
+                <param datatype="uint16" name="update_policy" type="uint16"/>
+                <param datatype="uint16" name="fw_index" type="uint16"/>
+                <param datatype="uint16" name="timeout_base" type="uint16"/>
+                <param datatype="uint16" name="transfer_mode" type="uint16"/>
+            </params>
+        </event>
+        <enums name="dist_step">
+            <enum name="dist_step_idle" value="0x0"/>
+            <enum name="dist_step_starting_update" value="0x1"/>
+            <enum name="dist_step_transferring_image" value="0x2"/>
+            <enum name="dist_step_checking_verification" value="0x3"/>
+            <enum name="dist_step_waiting_for_apply" value="0x4"/>
+            <enum name="dist_step_applying_update" value="0x5"/>
+            <enum name="dist_step_checking_update_result" value="0x6"/>
+            <enum name="dist_step_completed" value="0x7"/>
+            <enum name="dist_step_failed" value="0x8"/>
+            <enum name="dist_step_cancelling" value="0x9"/>
+            <enum name="dist_step_suspended" value="0xa"/>
+        </enums>
+        <enums name="dfu_policy">
+            <enum name="dfu_policy_verify_only" value="0x0"/>
+            <enum name="dfu_policy_verify_and_apply" value="0x1"/>
+        </enums>
+        <enums name="dist_node_phase">
+            <enum name="dist_node_phase_idle" value="0x0"/>
+            <enum name="dist_node_phase_transfer_error" value="0x1"/>
+            <enum name="dist_node_phase_transfer_in_progress" value="0x2"/>
+            <enum name="dist_node_phase_verifying_update" value="0x3"/>
+            <enum name="dist_node_phase_verification_success" value="0x4"/>
+            <enum name="dist_node_phase_verification_failed" value="0x5"/>
+            <enum name="dist_node_phase_apply_in_progress" value="0x6"/>
+            <enum name="dist_node_phase_transfer_cancelled" value="0x7"/>
+            <enum name="dist_node_phase_apply_success" value="0x8"/>
+            <enum name="dist_node_phase_apply_failed" value="0x9"/>
+            <enum name="dist_node_phase_unknown" value="0xa"/>
+        </enums>
+        <enums name="dist_status">
+            <enum name="dist_status_success" value="0x0"/>
+            <enum name="dist_status_out_of_resources" value="0x1"/>
+            <enum name="dist_status_wrong_phase" value="0x2"/>
+            <enum name="dist_status_internal_error" value="0x3"/>
+            <enum name="dist_status_fwid_not_found" value="0x4"/>
+            <enum name="dist_status_invalid_appkey_index" value="0x5"/>
+            <enum name="dist_status_receivers_list_empty" value="0x6"/>
+            <enum name="dist_status_busy_with_distribution" value="0x7"/>
+            <enum name="dist_status_busy_with_upload" value="0x8"/>
+            <enum name="dist_status_uri_not_supported" value="0x9"/>
+            <enum name="dist_status_uri_malformed" value="0xa"/>
+            <enum name="dist_status_uri_unreachable" value="0xb"/>
+            <enum name="dist_status_new_fw_not_available" value="0xc"/>
+            <enum name="dist_status_suspend_failed" value="0xd"/>
+        </enums>
+    </class>
+    <class index="89" name="fw_dist_client">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="setup" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="setup_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint16" name="timeout_base" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="set_upload_metadata" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="14" name="get_receivers" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint16" name="start_index" type="uint16"/>
+                <param datatype="uint16" name="max_entries" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="13" name="get" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="15" name="start_distribution" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint8" name="dist_appkey_index" type="uint8"/>
+                <param datatype="uint8" name="dist_ttl" type="uint8"/>
+                <param datatype="uint16" name="dist_timeout_base" type="uint16"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+                <param datatype="uint8" name="update_policy" type="uint8"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="16" name="cancel_distribution" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="17" name="apply_distribution" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="18" name="suspend_distribution" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="19" name="add_receivers" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint8array" name="nodes" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="20" name="delete_all_receivers" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="21" name="get_capabilities" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="22" name="get_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="23" name="start_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="25" name="cancel_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="26" name="get_fw" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="27" name="get_fw_by_index" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint16" name="index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="28" name="delete_fw" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="29" name="delete_all_fw" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="30" name="prepare_oob_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="31" name="start_oob_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="ttl" type="uint8"/>
+                <param datatype="uint8array" name="uri" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="32" name="suspend_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="33" name="resume_upload" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="3" name="receivers_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint16" name="nodes_list_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="4" name="receivers_list">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="index" type="uint16"/>
+                <param datatype="uint16" name="nodes_list_size" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+                <param datatype="uint8" name="update_status" type="uint8"/>
+                <param datatype="uint8" name="transfer_status" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+        </event>
+        <event index="5" name="receivers_list_end">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="start_index" type="uint16"/>
+                <param datatype="uint16" name="num_reported" type="uint16"/>
+                <param datatype="uint16" name="nodes_list_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="6" name="capabilities_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="max_nodes_list_size" type="uint16"/>
+                <param datatype="uint16" name="max_fw_list_size" type="uint16"/>
+                <param datatype="uint32" name="max_fw_size" type="uint32"/>
+                <param datatype="uint32" name="max_upload_space" type="uint32"/>
+                <param datatype="uint32" name="remaining_upload_space" type="uint32"/>
+                <param datatype="uint8" name="oob_supported" type="uint8"/>
+                <param datatype="uint8array" name="uri_scheme_names" type="uint8array"/>
+            </params>
+        </event>
+        <event index="7" name="distribution_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint8" name="distributor_ttl" type="uint8"/>
+                <param datatype="uint16" name="timeout_base" type="uint16"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+                <param datatype="uint8" name="apply_immediately" type="uint8"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+            </params>
+        </event>
+        <event index="8" name="upload_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="phase" type="uint8"/>
+                <param datatype="uint8" name="type" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="9" name="fw_status">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint16" name="num_entries" type="uint16"/>
+                <param datatype="uint16" name="index" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="10" name="upload_complete">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="11" name="upload_failed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="status_code" type="uint8"/>
+                <param datatype="uint8" name="dist_status_code" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint32" name="blob_size" type="uint32"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <enums name="upload_phase">
+            <enum name="upload_phase_idle" value="0x0"/>
+            <enum name="upload_phase_transfer_in_progress" value="0x1"/>
+            <enum name="upload_phase_transfer_error" value="0x2"/>
+            <enum name="upload_phase_transfer_completed" value="0x3"/>
+        </enums>
+        <enums name="dist_upload_type">
+            <enum name="dist_upload_type_in_band" value="0x0"/>
+            <enum name="dist_upload_type_out_of_band" value="0x1"/>
+        </enums>
+        <enums name="dist_oob">
+            <enum name="dist_oob_not_supported" value="0x0"/>
+            <enum name="dist_oob_supported" value="0x1"/>
+        </enums>
+        <enums name="dist_phase">
+            <enum name="dist_phase_idle" value="0x0"/>
+            <enum name="dist_phase_active" value="0x1"/>
+            <enum name="dist_phase_transferred" value="0x2"/>
+            <enum name="dist_phase_applying" value="0x3"/>
+            <enum name="dist_phase_completed" value="0x4"/>
+            <enum name="dist_phase_failed" value="0x5"/>
+            <enum name="dist_phase_cancelling" value="0x6"/>
+            <enum name="dist_phase_suspended" value="0x7"/>
+        </enums>
+    </class>
+    <class index="48" name="remote_provisioning_client">
+        <command index="0" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="get_scan_capabilities" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="start_scan" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="item_limit" type="uint8"/>
+                <param datatype="uint8" name="timeout_sec" type="uint8"/>
+                <param datatype="uint8" name="single_scan" type="uint8"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_scan_status" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="stop_scan" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="start_extended_scan" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="timeout_sec" type="uint8"/>
+                <param datatype="uint8" name="mode" type="uint8"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint8array" name="ad_types" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="open_link" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="timeout_sec" type="uint8"/>
+                <param datatype="uint8" name="dkri" type="uint8"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="7" name="get_link_status" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="close_link" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="reason" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="scan_capabilities">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="max_items" type="uint8"/>
+                <param datatype="uint8" name="active" type="uint8"/>
+            </params>
+        </event>
+        <event index="1" name="scan_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint8" name="max_reports" type="uint8"/>
+                <param datatype="uint8" name="timeout_sec" type="uint8"/>
+            </params>
+        </event>
+        <event index="2" name="scan_report">
+            <params>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="int8" name="rssi" type="int8"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint16" name="oob" type="uint16"/>
+                <param datatype="uint32" name="uri" type="uint32"/>
+            </params>
+        </event>
+        <event index="3" name="extended_scan_report">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uuid_128" name="uuid" type="uuid_128"/>
+                <param datatype="uint16" name="oob" type="uint16"/>
+                <param datatype="uint8array" name="ad_structures" type="uint8array"/>
+            </params>
+        </event>
+        <event index="5" name="link_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+            </params>
+        </event>
+        <event index="6" name="link_report">
+            <params>
+                <param datatype="uint16" name="server" type="uint16"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint8" name="reason" type="uint8"/>
+            </params>
+        </event>
+        <enums name="link_state">
+            <enum name="link_state_idle" value="0x0"/>
+            <enum name="link_state_opening" value="0x1"/>
+            <enum name="link_state_active" value="0x2"/>
+            <enum name="link_state_outbound_packet_transfer" value="0x3"/>
+            <enum name="link_state_closing" value="0x4"/>
+        </enums>
+    </class>
+    <class index="49" name="remote_provisioning_server">
+        <command index="0" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="open_link" >
+            <params>
+                <param datatype="connection" name="connection" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="set_default_bearer" >
+            <params>
+                <param datatype="uint8" name="bearer" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="link_open_request">
+            <params>
+                <param datatype="bd_addr" name="address" type="bd_addr"/>
+                <param datatype="uint8" name="address_type" type="uint8"/>
+            </params>
+        </event>
+        <event index="1" name="link_close_request">
+            <params>
+                <param datatype="connection" name="connection" type="uint8"/>
+            </params>
+        </event>
+        <enums name="scan_state">
+            <enum name="idle" value="0x0"/>
+            <enum name="multiple" value="0x1"/>
+            <enum name="single" value="0x2"/>
+        </enums>
+        <enums name="status">
+            <enum name="success" value="0x0"/>
+            <enum name="scan_cannot_Start" value="0x1"/>
+            <enum name="invalid_state" value="0x2"/>
+            <enum name="limited_resources" value="0x3"/>
+            <enum name="link_cannot_open" value="0x4"/>
+            <enum name="link_open_failed" value="0x5"/>
+            <enum name="link_closed_by_device" value="0x6"/>
+            <enum name="link_closed_by_server" value="0x7"/>
+            <enum name="link_closed_by_client" value="0x8"/>
+            <enum name="link_closed_as_cannot_receive_pdu" value="0x9"/>
+            <enum name="link_closed_as_cannot_send_pdu" value="0xa"/>
+            <enum name="link_closed_as_cannot_deliver_pdu_report" value="0xb"/>
+        </enums>
+    </class>
+    <class index="90" name="fw_standalone_updater">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="max_node_list_size" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="setup" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint32" name="fw_size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="set_metadata" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="set_multicast_threshold" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="multicast_threshold" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="add_receiver" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="delete_all_receivers" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="7" name="start" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="dist_appkey_index" type="uint16"/>
+                <param datatype="uint8" name="dist_ttl" type="uint8"/>
+                <param datatype="uint16" name="dist_timeout_base" type="uint16"/>
+                <param datatype="uint8" name="transfer_mode" type="uint8"/>
+                <param datatype="uint16" name="group_address" type="uint16"/>
+                <param datatype="uuid_128" name="virtual_address" type="uuid_128"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="execute_distribution_step" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="9" name="apply" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="10" name="get_state" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint16" name="total_nodes" type="uint16"/>
+                <param datatype="uint16" name="num_active_nodes" type="uint16"/>
+            </returns>
+        </command>
+        <command index="11" name="get_node_status_by_index" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="entry_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="retrieved_phase" type="uint8"/>
+                <param datatype="uint8" name="update_server_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_server_status" type="uint8"/>
+                <param datatype="uint8" name="transfer_progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </returns>
+        </command>
+        <command index="12" name="get_node_status_by_address" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="node_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="retrieved_phase" type="uint8"/>
+                <param datatype="uint8" name="update_server_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_server_status" type="uint8"/>
+                <param datatype="uint8" name="transfer_progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </returns>
+        </command>
+        <command index="13" name="cancel" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="dist_state_changed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint16" name="num_active_nodes" type="uint16"/>
+            </params>
+        </event>
+        <event index="1" name="node_failed">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint8" name="update_phase" type="uint8"/>
+                <param datatype="uint8" name="update_status" type="uint8"/>
+                <param datatype="uint8" name="mbt_status" type="uint8"/>
+                <param datatype="uint8" name="progress" type="uint8"/>
+                <param datatype="uint8" name="fw_index" type="uint8"/>
+            </params>
+        </event>
+    </class>
     <class index="96" name="migration">
         <command index="1" name="migrate_keys" >
             <params/>
@@ -4611,5 +6775,632 @@
                 <param datatype="errorcode" name="result" type="uint16"/>
             </returns>
         </command>
+    </class>
+    <class index="97" name="ncp_fw_list">
+        <command index="0" name="init" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="get_fw_info_by_index" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </returns>
+        </command>
+        <command index="3" name="get_fw_metadata_by_index" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </returns>
+        </command>
+        <command index="4" name="add_fw" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="set_fw_metadata" >
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="fw_list_index" type="uint16"/>
+                <param datatype="uint8array" name="metadata" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="8" name="fw_deleted">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+        <event index="9" name="fw_all_deleted">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint16" name="client_address" type="uint16"/>
+            </params>
+        </event>
+        <event index="10" name="fw_added">
+            <params>
+                <param datatype="uint16" name="elem_index" type="uint16"/>
+                <param datatype="uint32" name="size" type="uint32"/>
+                <param datatype="uuid_64" name="blob_id" type="sl_bt_uuid_64_t"/>
+                <param datatype="uint8array" name="fwid" type="uint8array"/>
+            </params>
+        </event>
+    </class>
+    <class index="98" name="sar_config_client">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_sar_transmitter" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="set_sar_transmitter" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_count" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_wo_progress_count" type="uint8"/>
+                <param datatype="uint16" name="unicast_retrans_interval_step" type="uint16"/>
+                <param datatype="uint16" name="unicast_retrans_interval_increment" type="uint16"/>
+                <param datatype="uint8" name="multicast_retrans_count" type="uint8"/>
+                <param datatype="uint16" name="multicast_retrans_interval_step" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="5" name="get_sar_receiver" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="6" name="set_sar_receiver" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="segments_threshold" type="uint8"/>
+                <param datatype="uint8" name="ack_delay_increment" type="uint8"/>
+                <param datatype="uint32" name="discard_timeout" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="ack_retrans_count" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <event index="1" name="sar_transmitter_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_count" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_wo_progress_count" type="uint8"/>
+                <param datatype="uint16" name="unicast_retrans_interval_step" type="uint16"/>
+                <param datatype="uint16" name="unicast_retrans_interval_increment" type="uint16"/>
+                <param datatype="uint8" name="multicast_retrans_count" type="uint8"/>
+                <param datatype="uint16" name="multicast_retrans_interval_step" type="uint16"/>
+            </params>
+        </event>
+        <event index="2" name="sar_receiver_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="segments_threshold" type="uint8"/>
+                <param datatype="uint8" name="ack_delay_increment" type="uint8"/>
+                <param datatype="uint32" name="discard_timeout" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="ack_retrans_count" type="uint8"/>
+            </params>
+        </event>
+    </class>
+    <class index="99" name="sar_config_server">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_sar_transmitter" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_count" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_wo_progress_count" type="uint8"/>
+                <param datatype="uint16" name="unicast_retrans_interval_step" type="uint16"/>
+                <param datatype="uint16" name="unicast_retrans_interval_increment" type="uint16"/>
+                <param datatype="uint8" name="multicast_retrans_count" type="uint8"/>
+                <param datatype="uint16" name="multicast_retrans_interval_step" type="uint16"/>
+            </returns>
+        </command>
+        <command index="4" name="set_sar_transmitter" >
+            <params>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_count" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_wo_progress_count" type="uint8"/>
+                <param datatype="uint16" name="unicast_retrans_interval_step" type="uint16"/>
+                <param datatype="uint16" name="unicast_retrans_interval_increment" type="uint16"/>
+                <param datatype="uint8" name="multicast_retrans_count" type="uint8"/>
+                <param datatype="uint16" name="multicast_retrans_interval_step" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="get_sar_receiver" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="segments_threshold" type="uint8"/>
+                <param datatype="uint8" name="ack_delay_increment" type="uint8"/>
+                <param datatype="uint32" name="discard_timeout" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="ack_retrans_count" type="uint8"/>
+            </returns>
+        </command>
+        <command index="6" name="set_sar_receiver" >
+            <params>
+                <param datatype="uint8" name="segments_threshold" type="uint8"/>
+                <param datatype="uint8" name="ack_delay_increment" type="uint8"/>
+                <param datatype="uint32" name="discard_timeout" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="ack_retrans_count" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="1" name="sar_transmitter_set">
+            <params>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_count" type="uint8"/>
+                <param datatype="uint8" name="unicast_retrans_wo_progress_count" type="uint8"/>
+                <param datatype="uint16" name="unicast_retrans_interval_step" type="uint16"/>
+                <param datatype="uint16" name="unicast_retrans_interval_increment" type="uint16"/>
+                <param datatype="uint8" name="multicast_retrans_count" type="uint8"/>
+                <param datatype="uint16" name="multicast_retrans_interval_step" type="uint16"/>
+            </params>
+        </event>
+        <event index="2" name="sar_receiver_set">
+            <params>
+                <param datatype="uint8" name="segments_threshold" type="uint8"/>
+                <param datatype="uint8" name="ack_delay_increment" type="uint8"/>
+                <param datatype="uint32" name="discard_timeout" type="uint32"/>
+                <param datatype="uint8" name="segment_interval_step" type="uint8"/>
+                <param datatype="uint8" name="ack_retrans_count" type="uint8"/>
+            </params>
+        </event>
+    </class>
+    <class index="100" name="private_beacon_client">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_beacon" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="set_beacon" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint16" name="random_update_steps" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="5" name="get_gatt_proxy" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="6" name="set_gatt_proxy" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="7" name="get_identity" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="8" name="set_identity" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <event index="1" name="beacon_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+                <param datatype="uint8" name="random_update_steps" type="uint8"/>
+            </params>
+        </event>
+        <event index="2" name="gatt_proxy_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+            </params>
+        </event>
+        <event index="3" name="identity_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="status" type="uint8"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8" name="state" type="uint8"/>
+            </params>
+        </event>
+    </class>
+    <class index="101" name="private_beacon_server">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+    </class>
+    <class index="102" name="lcd_client">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_composition_data" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="page_number" type="uint8"/>
+                <param datatype="uint16" name="offset" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="get_metadata" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="page_number" type="uint8"/>
+                <param datatype="uint16" name="offset" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <event index="1" name="data_header">
+            <params>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="page_number" type="uint8"/>
+                <param datatype="uint16" name="offset" type="uint16"/>
+                <param datatype="uint16" name="total_size" type="uint16"/>
+            </params>
+        </event>
+        <event index="2" name="data">
+            <params>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
+            </params>
+        </event>
+        <event index="3" name="data_end">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </params>
+        </event>
+    </class>
+    <class index="103" name="lcd_server">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+    </class>
+    <class index="104" name="on_demand_private_proxy_client">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_on_demand_private_gatt_proxy" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="set_on_demand_private_gatt_proxy" >
+            <params>
+                <param datatype="uint16" name="enc_netkey_index" type="uint16"/>
+                <param datatype="uint16" name="server_address" type="uint16"/>
+                <param datatype="uint8" name="value" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+            </returns>
+        </command>
+        <event index="1" name="private_gatt_proxy_status">
+            <params>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="handle" type="uint32"/>
+                <param datatype="uint8" name="value" type="uint8"/>
+            </params>
+        </event>
+    </class>
+    <class index="105" name="solicitation_config_client">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="clear_items" >
+            <params>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint16" name="range_start" type="uint16"/>
+                <param datatype="uint8" name="length_present" type="uint8"/>
+                <param datatype="uint8" name="range_length" type="uint8"/>
+                <param datatype="uint8" name="response_required" type="uint8"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <event index="1" name="items_status">
+            <params>
+                <param datatype="uint16" name="src" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint16" name="appkey_index" type="uint16"/>
+                <param datatype="uint16" name="range_start" type="uint16"/>
+                <param datatype="uint8" name="length_present" type="uint8"/>
+                <param datatype="uint8" name="range_length" type="uint8"/>
+            </params>
+        </event>
+    </class>
+    <class index="106" name="on_demand_private_proxy_server">
+        <command index="1" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+    </class>
+    <class index="107" name="silabs_config_server">
+        <command index="0" name="init" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="1" name="deinit" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="2" name="set_tx" >
+            <params>
+                <param datatype="uint8" name="phy" type="uint8"/>
+                <param datatype="uint32" name="options" type="uint32"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="3" name="get_tx" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="phy" type="uint8"/>
+                <param datatype="uint32" name="options" type="uint32"/>
+            </returns>
+        </command>
+        <command index="4" name="set_model_enable" >
+            <params>
+                <param datatype="uint8" name="elem_index" type="uint8"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+                <param datatype="uint16" name="value" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="5" name="get_model_enable" >
+            <params>
+                <param datatype="uint8" name="elem_index" type="uint8"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="value" type="uint16"/>
+            </returns>
+        </command>
+        <command index="6" name="set_network_pdu" >
+            <params>
+                <param datatype="uint16" name="max_size" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="7" name="get_network_pdu" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint16" name="max_size" type="uint16"/>
+            </returns>
+        </command>
+        <event index="0" name="tx_changed">
+            <params>
+                <param datatype="uint8" name="phy" type="uint8"/>
+                <param datatype="uint32" name="options" type="uint32"/>
+            </params>
+        </event>
+        <event index="1" name="model_option_changed">
+            <params>
+                <param datatype="uint8" name="elem_index" type="uint8"/>
+                <param datatype="uint16" name="vendor_id" type="uint16"/>
+                <param datatype="uint16" name="model_id" type="uint16"/>
+                <param datatype="uint16" name="value" type="uint16"/>
+            </params>
+        </event>
+        <event index="2" name="network_pdu_changed">
+            <params>
+                <param datatype="uint16" name="max_size" type="uint16"/>
+            </params>
+        </event>
     </class>
 </api>

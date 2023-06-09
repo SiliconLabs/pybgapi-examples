@@ -72,8 +72,10 @@ class GenericApp(threading.Thread):
         except ConnectorException as err:
             self.log.error("%s", err)
             sys.exit(-1)
-        # Reset device to get to a well defined state.
-        self.reset()
+        # CPC may be used in multiprotocol scenarios when reset can disrupt other hosts.
+        if not self.cpc:
+            # Reset device to get to a well defined state.
+            self.reset()
 
         # Enter main program loop.
         while self._run:
@@ -140,9 +142,6 @@ class BluetoothApp(GenericApp):
     def reset(self):
         """ Reset Bluetooth device. """
         self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
-        if self.cpc:
-            # Use the system hello command to synchronize the CPC communication with the target
-            self.lib.bt.system.hello()
 
 class BtMeshApp(GenericApp):
     """ Application class for Bluetooth mesh devices """

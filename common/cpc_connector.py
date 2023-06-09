@@ -20,32 +20,39 @@
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+import sys
+import threading
 from bgapi.connector import Connector, ConnectorException
-from . import libcpc_wrapper as lcw
+try:
+    import libcpc
+except ModuleNotFoundError:
+    # Suppress exception until CPC connector is not used
+    pass
 
 class SerialConnectorCPC(Connector):
     """ CPC serial connector """
-    def __init__(self, lib_path, cpc_instance, tracing=False, endpoint_id=None):
-        """ Init """
+    def __init__(self, lib_path, cpc_instance=None, tracing=False, endpoint_id=None):
+        if "libcpc" not in sys.modules:
+            raise ModuleNotFoundError("No module named 'libcpc'")
         self.endpoint = None
-        self.lib_path = lib_path
-        self.cpc_instance = cpc_instance
+        self.endpoint_id = endpoint_id
+        if self.endpoint_id is None:
+            self.endpoint_id = libcpc.Endpoint.Id.BLUETOOTH.value
+        self.read_timeout = None
+        self.write_timeout = None
+        self.reset_event = threading.Event()
         try:
-            self.cpc = lcw.CPC(self.lib_path, self.cpc_instance, tracing, self.cpc_reset)
+            self.cpc = libcpc.CPC(lib_path, cpc_instance, tracing, self.reset_event.set)
         except Exception as err:
             raise ConnectorException(err) from err
         self.read_buff = bytearray()
-        if endpoint_id is not None:
-            self.endpoint_id = endpoint_id
-        else:
-            self.endpoint_id = lcw.Endpoint.Id.BLUETOOTH.value # Bluetooth (BGAPI) endpoint
-        # Only a window of 1 is supported at the moment, see CPC library documentation
-        self.tx_window_size = 1
 
     def open(self):
         """ Opening CPC endpoint """
         try:
-            self.endpoint = self.cpc.open_endpoint(self.endpoint_id, self.tx_window_size)
+            self.endpoint = self.cpc.open_endpoint(self.endpoint_id)
+            # Send handshake message (system hello)
+            self.endpoint.write(b"\x20\x00\x01\x00")
         except Exception as err:
             raise ConnectorException(err) from err
 
@@ -61,6 +68,7 @@ class SerialConnectorCPC(Connector):
     def write(self, data):
         """ Write data to the endpoint """
         try:
+            self._check_reset()
             self.endpoint.write(data)
         except Exception as err:
             raise ConnectorException(err) from err
@@ -69,6 +77,7 @@ class SerialConnectorCPC(Connector):
         """ Read size number of data from endpoint """
         if len(self.read_buff) < size:
             try:
+                self._check_reset()
                 data = self.endpoint.read()
                 self.read_buff.extend(data)
             except Exception:
@@ -82,19 +91,24 @@ class SerialConnectorCPC(Connector):
 
     def set_read_timeout(self, timeout):
         """ Set read timeout """
-        time = lcw.CPCTimeval(timeout)
-        self.endpoint.set_option(lcw.Option.CPC_OPTION_RX_TIMEOUT, time)
+        self.read_timeout = timeout
+        time = libcpc.CPCTimeval(timeout)
+        self.endpoint.set_option(libcpc.Option.CPC_OPTION_RX_TIMEOUT, time)
 
     def set_write_timeout(self, timeout):
         """ Set write timeout """
-        time = lcw.CPCTimeval(timeout)
-        self.endpoint.set_option(lcw.Option.CPC_OPTION_TX_TIMEOUT, time)
+        self.write_timeout = timeout
+        time = libcpc.CPCTimeval(timeout)
+        self.endpoint.set_option(libcpc.Option.CPC_OPTION_TX_TIMEOUT, time)
 
-    def cpc_reset(self):
-        """ Restart the CPC library """
-        self.cpc.restart()
-        del self.read_buff[:]
-        try:
-            self.endpoint = self.cpc.open_endpoint(self.endpoint_id, self.tx_window_size)
-        except Exception as err:
-            raise ConnectorException(err) from err
+    def _check_reset(self):
+        """ Check reset event and perform reset """
+        if self.reset_event.is_set():
+            self.reset_event.clear()
+            self.close()
+            self.cpc.restart()
+            self.open()
+            if self.read_timeout is not None:
+                self.set_read_timeout(self.read_timeout)
+            if self.write_timeout is not None:
+                self.set_read_timeout(self.write_timeout)
