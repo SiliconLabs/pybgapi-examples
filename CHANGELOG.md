@@ -3,6 +3,22 @@
 The releases in this repo are based on particular [GSDK releases](https://github.com/SiliconLabs/gecko_sdk/releases).
 The version numbers here reflect the GSDK version that the release is based on.
 
+## [4.4.0] - 2023-12-13
+
+### Changed
+- Device reset is not connector type dependent anymore, it is performed by a watchdog at startup.
+- Update BGAPI version to 7.0.0.
+- Represent BGAPI event and response parameters with `errorcode` type as `Status` objects with human readable string representation
+
+### Added
+- Robust connector option. Requires at least pyBGAPI v1.3.0.
+- New features in bt_roaming example: RSSI sniffing, network visualization
+- NCP test example
+- Module with SL status values
+
+### Removed
+- CPC connector has been moved to the pyBGAPI package. Requires at least pyBGAPI v1.3.0.
+
 ## [4.3.0] - 2023-06-09
 
 ### Fixed
@@ -59,6 +75,7 @@ The version numbers here reflect the GSDK version that the release is based on.
 ### Added
 - Initial public release.
 
+[4.4.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.4.0
 [4.3.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.3.0
 [4.2.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.2.0
 [4.1.2]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.1.2

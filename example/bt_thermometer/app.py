@@ -235,9 +235,10 @@ class App(BluetoothApp):
             self.indication_event.wait()
             try:
                 self.send_indication()
-            except bgapi.bglib.CommandError:
-                # Ignore command error i.e. if the device resets
-                pass
+            except bgapi.bglib.CommandError as err:
+                # Tolerate command error, e.g. if the device resets
+                self.log.error(err)
+                self.indication_event.clear()
             time.sleep(INDICATION_PERIOD)
 
 # Script entry point.

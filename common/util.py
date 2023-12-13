@@ -2,7 +2,7 @@
 Application utility module
 """
 
-# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2023 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -35,13 +35,26 @@ import traceback
 import bgapi
 from bgapi.connector import ConnectorException
 import serial.tools.list_ports
-if sys.platform.startswith('linux'):
-    from . import cpc_connector
+from .status import Status
 
 LOG_FORMAT_SINGLE = "%(asctime)s: %(levelname)s - %(message)s"
 LOG_FORMAT = "%(asctime)s: %(name)s %(levelname)s - %(message)s"
 BT_XAPI = os.path.join(os.path.dirname(__file__), "../api/sl_bt.xapi")
 BTMESH_XAPI = os.path.join(os.path.dirname(__file__), "../api/sl_btmesh.xapi")
+
+# Patch bgapi package to use a modified version of CommandFailedError
+class CommandFailedError(bgapi.bglib.CommandError):
+    """ Convert errorcode into Status object. """
+    def __init__(self, response, command=None):
+        self.errorcode = Status(response._errorcode)
+        self.response = response
+        self.command = command
+        msg = f"Command failed with result {self.errorcode:#06x}: '{self.errorcode}'"
+        if command:
+            msg += f"\n> {command}\n< {response}"
+        super().__init__(msg)
+
+bgapi.bglib.CommandFailedError = CommandFailedError
 
 class GenericApp(threading.Thread):
     """ Generic application class. """
@@ -50,9 +63,9 @@ class GenericApp(threading.Thread):
         self.id = next(self._id)
         self.lib = bgapi.BGLib(connector, apis)
         self.log = logging.getLogger(f"{type(self).__name__}#{self.id}")
-        self.cpc = ('common.cpc_connector' in sys.modules) and \
-            isinstance(connector, cpc_connector.SerialConnectorCPC)
-        self._run = False
+        # Set the ready event in the child classes to feed the watchdog
+        self.ready = threading.Event()
+        self._run = threading.Event()
         super().__init__()
 
     def event_handler(self, evt):
@@ -63,7 +76,7 @@ class GenericApp(threading.Thread):
 
     def run(self):
         """ Main execution loop of the application. """
-        self._run = True
+        self._run.set()
         exit_code = 0
 
         self.log.info("Open device")
@@ -72,13 +85,12 @@ class GenericApp(threading.Thread):
         except ConnectorException as err:
             self.log.error("%s", err)
             sys.exit(-1)
-        # CPC may be used in multiprotocol scenarios when reset can disrupt other hosts.
-        if not self.cpc:
-            # Reset device to get to a well defined state.
-            self.reset()
+
+        # Start watchdog in the background
+        threading.Thread(target=self.watchdog, daemon=True).start()
 
         # Enter main program loop.
-        while self._run:
+        while self._run.is_set():
             try:
                 # The timeout is needed to get the KeyboardInterrupt.
                 # On Windows hosts, timeout is needed in both threaded and non-threaded modes.
@@ -88,24 +100,35 @@ class GenericApp(threading.Thread):
                 # timeout=0: maximal CPU usage, KeyboardInterrupt recognized immediately.
                 # See the documentation of Queue.get method for details.
                 evt = self.lib.get_event(timeout=0.1)
-                if evt is not None:
-                    self._event_handler(evt)
-                    self.event_handler(evt)
-                    # Call dedicated event callback if available.
-                    event_callback = getattr(self, evt._str, None)
-                    if event_callback is not None:
-                        event_callback(evt)
+                if evt is None:
+                    continue
+                # Convert event parameters with errorcode datatype into Status objects
+                for param in evt._apinode.params:
+                    if param.datatype.name == "errorcode":
+                        value = getattr(evt, param.name)
+                        setattr(evt, param.name, Status(value))
+                self._event_handler(evt)
+                if not self.ready.is_set():
+                    # Unexpected events may happen if the previous host execution aborted and the
+                    # target device continues emitting events. Therefore, calling application event
+                    # handlers should be prevented before the device is ready.
+                    continue
+                self.event_handler(evt)
+                # Call dedicated event callback if available.
+                event_callback = getattr(self, evt._str, None)
+                if event_callback is not None:
+                    event_callback(evt)
             except bgapi.bglib.CommandFailedError as err:
                 # Get additional info from trace.
                 trace = traceback.extract_tb(sys.exc_info()[-1])[-3]
                 self.log.error("%s", err)
                 self.log.error("  File '%s', line %d, in %s", trace.filename, trace.lineno, trace.name)
                 self.log.error("    %s", trace.line)
-                self._run = False
+                self._run.clear()
                 exit_code = -1
             except KeyboardInterrupt:
                 self.log.info("User interrupt")
-                self._run = False
+                self._run.clear()
 
         self.log.info("Close device")
         self.lib.close()
@@ -113,10 +136,26 @@ class GenericApp(threading.Thread):
 
     def stop(self):
         """ Terminate main execution loop. """
-        self._run = False
+        self._run.clear()
 
     def reset(self):
         """ Reset device, meant to be overridden by child classes. """
+
+    def watchdog(self):
+        """ Device supervisor task. """
+        # Wait 1 second for the device to be ready before sending the first reset command
+        if self.ready.wait(1):
+            return
+        retry = 0
+        while retry < 3:
+            self.log.info("Resetting device (%d)...", retry)
+            retry += 1
+            self.reset()
+            # Wait 10 seconds for the device to be ready before sending the next reset command
+            if self.ready.wait(10):
+                return
+        self.log.error("Device unreachable.")
+        self.stop()
 
 class BluetoothApp(GenericApp):
     """ Application class for Bluetooth devices. """
@@ -128,6 +167,8 @@ class BluetoothApp(GenericApp):
     def _event_handler(self, evt):
         """ Internal Bluetooth event handler. """
         if evt == "bt_evt_system_boot":
+            # Feed the watchdog
+            self.ready.set()
             # Check Bluetooth stack version
             version = "{major}.{minor}.{patch}".format(**vars(evt))
             self.log.info("Bluetooth stack booted: v%s-b%s", version, evt.build)
@@ -151,6 +192,8 @@ class BtMeshApp(GenericApp):
     def _event_handler(self, evt):
         """ Internal Bluetooth event handler. """
         if evt == "bt_evt_system_boot":
+            # Feed the watchdog
+            self.ready.set()
             # Check Bluetooth stack version
             version = "{major}.{minor}.{patch}".format(**vars(evt))
             self.log.info("Bluetooth stack booted: v%s-b%s", version, evt.build)
@@ -171,7 +214,7 @@ class ArgumentParser(argparse.ArgumentParser):
     """ Custom argument parser for GenericApp and its derivatives """
     def __init__(self, *args, single_mode=True, epilog=None, formatter_class=CustomHelpFormatter, **kwargs):
         self.single_mode = single_mode
-        self.cpc_options = 'common.cpc_connector' in sys.modules
+        self.cpc_options = hasattr(bgapi, 'CpcConnector')
         if self.single_mode:
             nargs = "?"
             cpc_const = []
@@ -228,6 +271,15 @@ class ArgumentParser(argparse.ArgumentParser):
             choices=logging._nameToLevel.keys(),
             help="Log level",
             default="INFO")
+        self.add_argument(
+            "--robust",
+            help="Enable robust communication",
+            action="store_true")
+        self.add_argument(
+            "--no_crc",
+            dest="robust_crc",
+            help="Disable CRC checking for robust communication. Ignored if robust communication is disabled.",
+            action="store_false")
 
     def parse_args(self, *args, **kwargs):
         """ Implement special argument parsing rules """
@@ -285,7 +337,7 @@ def get_connector(args=None):
     if args.cpc:
         for cpc in args.cpc:
             try:
-                cpc_conn = cpc_connector.SerialConnectorCPC(
+                cpc_conn = bgapi.CpcConnector(
                     lib_path=args.cpc_lib_path,
                     cpc_instance=cpc,
                     tracing=args.cpc_tracing)
@@ -296,6 +348,9 @@ def get_connector(args=None):
             connector.append(cpc_conn)
     if args.conn:
         connector += [connector_from_str(conn) for conn in args.conn]
+    if args.robust:
+        # Enable robust layer on all connectors
+        connector = [bgapi.RobustConnector(conn, args.robust_crc) for conn in connector]
     if args.single_mode:
         return connector[0]
     return connector

@@ -154,6 +154,7 @@ See the documentation of the original C examples to get more information.
 
 - [Bluetooth - Empty](example/bt_empty)
 - [Bluetooth - iBeacon](example/bt_ibeacon)
+- [Bluetooth - NCP test](example/bt_ncp_test)
 - [Bluetooth - Roaming](example/bt_roaming)
 - [Bluetooth - Thermometer](example/bt_thermometer)
 - [Bluetooth - Thermometer Client](example/bt_thermometer_client)

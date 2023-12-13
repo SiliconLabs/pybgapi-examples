@@ -2,7 +2,7 @@
 """ Roaming NCP-host Example Application for peripheral devices.
 """
 
-# Copyright 2022 Silicon Laboratories Inc. www.silabs.com
+# Copyright 2023 Silicon Laboratories Inc. www.silabs.com
 #
 # SPDX-License-Identifier: Zlib
 #
@@ -32,6 +32,7 @@ import bgapi
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.util import ArgumentParser, BluetoothApp, get_connector
+import common.status as status
 
 # Heart rate measurement characteristic notification period in seconds
 NOTIFICATION_PERIOD = 10.0
@@ -58,7 +59,7 @@ class HeartRateSensor(BluetoothApp):
         try:
             self.lib.bt.sm.get_bonding_handles(0)
         except bgapi.bglib.CommandFailedError as err:
-            if err.errorcode == 0xe: # Feature not available
+            if err.errorcode == status.NOT_AVAILABLE:
                 self.log.error("External bonding database feature present in the target firmware.")
             raise
         self.notification_event.clear()
@@ -78,7 +79,7 @@ class HeartRateSensor(BluetoothApp):
     def bt_evt_connection_closed(self, evt):
         """ Bluetooth event callback """
         self.notification_event.clear()
-        self.log.info("Connection closed")
+        self.log.info(f"Connection closed with reason {evt.reason:#x}: '{evt.reason}'")
         self.adv_start()
 
     def bt_evt_connection_parameters(self, evt):
@@ -88,7 +89,7 @@ class HeartRateSensor(BluetoothApp):
 
     def bt_evt_sm_bonding_failed(self, evt):
         """ Bluetooth event callback """
-        self.log.error("Bonding failed with reason 0x%x", evt.reason)
+        self.log.error(f"Bonding failed with reason {evt.reason:#x}: '{evt.reason}'")
 
     def bt_evt_gatt_server_characteristic_status(self, evt):
         """ Bluetooth event callback """
@@ -98,7 +99,7 @@ class HeartRateSensor(BluetoothApp):
                 if evt.client_config_flags == self.lib.bt.gatt_server.CLIENT_CONFIGURATION_DISABLE:
                     self.log.info("Notification disabled.")
                     self.notification_event.clear()
-                else:
+                elif not self.notification_event.is_set():
                     self.log.info("Notification enabled.")
                     self.notification_event.set()
 
@@ -231,9 +232,10 @@ class HeartRateSensor(BluetoothApp):
             self.notification_event.wait()
             try:
                 self.send_notification()
-            except bgapi.bglib.CommandError:
-                # Ignore command error i.e. if the device resets
-                pass
+            except bgapi.bglib.CommandError as err:
+                # Tolerate command error, e.g. if the device resets
+                self.log.error(err)
+                self.notification_event.clear()
             time.sleep(NOTIFICATION_PERIOD)
 
 def main():

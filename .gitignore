@@ -1,2 +1,3 @@
 *.pyc
-example/bt_roaming/bonding_db.json
+bonding_db.json
+graph.svg
