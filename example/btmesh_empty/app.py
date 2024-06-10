@@ -37,13 +37,12 @@ PB_GATT = 0x2
 
 class App(BtMeshApp):
     """ Application derived from BtMeshApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
         # This event indicates the device has started and the radio is ready.
         # Do not call any stack command before receiving this boot event!
-        if evt == "btmesh_evt_node_initialized":
-            if not evt.provisioned:
-                self.lib.btmesh.node.start_unprov_beaconing(PB_ADV | PB_GATT)
+    def btmesh_evt_node_initialized(self, evt):
+        """ Bluetooth mesh event callback """
+        if not evt.provisioned:
+            self.lib.btmesh.node.start_unprov_beaconing(PB_ADV | PB_GATT)
 
         ####################################
         # Add further event handlers here. #

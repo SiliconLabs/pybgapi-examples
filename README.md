@@ -81,7 +81,7 @@ be handled in the main thread. See the [Troubleshooting](#troubleshooting) chapt
 
 ### BluetoothApp
 
-This class extends the *ConnectorApp* with the following features.
+This class extends the *GenericApp* with the following features.
 
 #### Check BGAPI Version
 
@@ -108,7 +108,7 @@ The *BluetoothApp* uses the [sl_bt.xapi](api/sl_bt.xapi) file by default in its 
 
 ### BtMeshApp
 
-This class extends the *ConnectorApp* with the following features.
+This class extends the *GenericApp* with the following features.
 
 #### Check BGAPI Version
 
@@ -147,7 +147,7 @@ options. Custom arguments can be added as documented in the standard `argparse.A
 
 ## Examples
 
-All examples in this repo reproduce the behavior of existing C examples from the GSDK.
+Most of the examples in this repo reproduce the behavior of existing C examples from the GSDK.
 The examples can be tested together with the [EFR Connect](https://www.silabs.com/developers/efr-connect-mobile-app)
 mobile app.
 See the documentation of the original C examples to get more information.
@@ -166,7 +166,7 @@ To create a custom Bluetooth application, follow these steps:
 - Import the [util.py](common/util.py) module.
 - Get a connector instance using the `get_connector` function.
 - Create your own application class inherited from the `BluetoothApp` class.
-- Override its `event_handler` method.
+- Add Bluetooth event handler methods, named after the event to be handled.
 - Instantiate your application class.
 - Call its `run` method.
 

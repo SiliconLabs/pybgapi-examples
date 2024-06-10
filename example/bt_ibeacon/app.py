@@ -67,30 +67,31 @@ BEACON_ADV_DATA = struct.pack(">BBBBBHH16sHHb",    # Most of the unsigned short 
 
 class App(BluetoothApp):
     """ Application derived from generic BluetoothApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
-        # This event indicates the device has started and the radio is ready.
-        # Do not call any stack command before receiving this boot event!
-        if evt == "bt_evt_system_boot":
-            # Create advertising set.
-            _, adv_handle = self.lib.bt.advertiser.create_set()
-            # Set custom advertising data.
-            self.lib.bt.legacy_advertiser.set_data(
-                adv_handle,
-                0,               # packet type
-                BEACON_ADV_DATA) # adv_data
-            # Set advertising interval to 100 ms.
-            self.lib.bt.advertiser.set_timing(
-                adv_handle,
-                160,  # interval min
-                160,  # interval max
-                0,    # duration
-                0)    # max events
-            # Start advertising in user mode and disable connections.
-            self.lib.bt.legacy_advertiser.start(
-                adv_handle,
-                self.lib.bt.legacy_advertiser.CONNECTION_MODE_NON_CONNECTABLE)
-            print("iBeacon started")
+    def bt_evt_system_boot(self, evt):
+        """ Bluetooth event callback
+
+        This event indicates that the device has started and the radio is ready.
+        Do not call any stack command before receiving this boot event!
+        """
+        # Create advertising set.
+        _, adv_handle = self.lib.bt.advertiser.create_set()
+        # Set custom advertising data.
+        self.lib.bt.legacy_advertiser.set_data(
+            adv_handle,
+            0,               # packet type
+            BEACON_ADV_DATA) # adv_data
+        # Set advertising interval to 100 ms.
+        self.lib.bt.advertiser.set_timing(
+            adv_handle,
+            160,  # interval min
+            160,  # interval max
+            0,    # duration
+            0)    # max events
+        # Start advertising in user mode and disable connections.
+        self.lib.bt.legacy_advertiser.start(
+            adv_handle,
+            self.lib.bt.legacy_advertiser.CONNECTION_MODE_NON_CONNECTABLE)
+        self.log.info("iBeacon started")
 
 # Script entry point.
 if __name__ == "__main__":

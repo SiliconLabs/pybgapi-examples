@@ -1,7 +1,20 @@
 # Changelog
 
-The releases in this repo are based on particular [GSDK releases](https://github.com/SiliconLabs/gecko_sdk/releases).
-The version numbers here reflect the GSDK version that the release is based on.
+The releases in this repo are based on particular [Gecko SDK](https://github.com/SiliconLabs/gecko_sdk/releases)
+and [Simplicity SDK](https://github.com/SiliconLabs/simplicity_sdk/releases) releases.
+The version numbers here reflect the GSDK/SiSDK version that the release is based on.
+
+## [2024.6.0] - 2024-06-10
+
+### Changed
+- Update BGAPI version to 8.0.0.
+- Keep SL status codes aligned with the SiSDK (former GSDK)
+- Replace the monolithic `event_handler` method with dedicated event handler methods in all examples
+- Refactor connection handling in the bt_thermometer_client example
+
+### Fixed
+- Various GUI issues in mesh light and switch examples on Mac and Linux
+- Most of the pylint errors in mesh examples
 
 ## [4.4.0] - 2023-12-13
 
@@ -75,6 +88,7 @@ The version numbers here reflect the GSDK version that the release is based on.
 ### Added
 - Initial public release.
 
+[2024.6.0]: https://github.com/SiliconLabs/simplicity_sdk/releases/tag/v2024.6.0
 [4.4.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.4.0
 [4.3.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.3.0
 [4.2.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.2.0

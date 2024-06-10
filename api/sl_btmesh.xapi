@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<api device_id="5" device_name="btmesh" version="7.0.0">
+<api device_id="5" device_name="btmesh" version="8.0.0">
     <datatypes>
         <datatype base="uint16" name="errorcode" length="2"/>
         <datatype base="int16" name="int16" length="2"/>
@@ -380,6 +380,48 @@
             <params>
                 <param datatype="uint16" name="uuid" type="uint16"/>
             </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="54" name="test_identity" >
+            <params>
+                <param datatype="uint16" name="address" type="uint16"/>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8array" name="data" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint8" name="match" type="uint8"/>
+            </returns>
+        </command>
+        <command index="55" name="set_proxy_service_scan_response" >
+            <params>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint8array" name="scan_response_data" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="56" name="clear_proxy_service_scan_response" >
+            <params>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="57" name="set_provisioning_service_scan_response" >
+            <params>
+                <param datatype="uint8array" name="scan_response_data" type="uint8array"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="58" name="clear_provisioning_service_scan_response" >
+            <params/>
             <returns>
                 <param datatype="errorcode" name="result" type="uint16"/>
             </returns>
@@ -1428,6 +1470,15 @@
                 <param datatype="uint16" name="handle" type="uint16"/>
             </returns>
         </command>
+        <command index="8" name="set_option" >
+            <params>
+                <param datatype="uint8" name="option" type="uint8"/>
+                <param datatype="uint32" name="value" type="uint32"/>
+            </params>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
         <event index="0" name="receive">
             <params>
                 <param datatype="uint16" name="destination_address" type="uint16"/>
@@ -1451,6 +1502,9 @@
                 <param datatype="uint8" name="message_flags" type="uint8"/>
             </params>
         </event>
+        <enums name="options">
+            <enum name="heap_work_buffer" value="0x0"/>
+        </enums>
     </class>
     <class index="26" name="health_client">
         <command index="7" name="init" >
@@ -7411,9 +7465,14 @@
             </returns>
         </command>
         <command index="5" name="get_statistics" >
-            <params/>
+            <params>
+                <param datatype="uint32" name="requested_chunk" type="uint32"/>
+                <param datatype="uint32" name="requested_offset" type="uint32"/>
+            </params>
             <returns>
                 <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="total_length" type="uint32"/>
+                <param datatype="uint32" name="chunk_offset" type="uint32"/>
                 <param datatype="uint8array" name="statistics" type="uint8array"/>
             </returns>
         </command>
@@ -7423,12 +7482,67 @@
                 <param datatype="errorcode" name="result" type="uint16"/>
             </returns>
         </command>
+        <command index="7" name="enable_friend" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="8" name="disable_friend" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+            </returns>
+        </command>
+        <command index="9" name="get_friend" >
+            <params/>
+            <returns>
+                <param datatype="errorcode" name="result" type="uint16"/>
+                <param datatype="uint32" name="queue_counter" type="uint32"/>
+                <param datatype="uint32" name="relay_counter" type="uint32"/>
+                <param datatype="uint32" name="remove_counter_sent" type="uint32"/>
+                <param datatype="uint32" name="remove_counter_old_pdu" type="uint32"/>
+                <param datatype="uint32" name="remove_counter_old_segack" type="uint32"/>
+                <param datatype="uint32" name="remove_counter_old_segment" type="uint32"/>
+            </returns>
+        </command>
         <event index="0" name="relay">
             <params>
                 <param datatype="uint16" name="destination_address" type="uint16"/>
                 <param datatype="uint16" name="source_address" type="uint16"/>
                 <param datatype="int8" name="rssi" type="int8"/>
                 <param datatype="uint8" name="ttl" type="uint8"/>
+            </params>
+        </event>
+        <event index="1" name="friend_queue">
+            <params>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint16" name="lpn" type="uint16"/>
+                <param datatype="uint16" name="src" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint32" name="ivi" type="uint32"/>
+                <param datatype="uint32" name="seq" type="uint32"/>
+            </params>
+        </event>
+        <event index="2" name="friend_relay">
+            <params>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint16" name="lpn" type="uint16"/>
+                <param datatype="uint16" name="src" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint32" name="ivi" type="uint32"/>
+                <param datatype="uint32" name="seq" type="uint32"/>
+            </params>
+        </event>
+        <event index="3" name="friend_remove">
+            <params>
+                <param datatype="uint16" name="netkey_index" type="uint16"/>
+                <param datatype="uint16" name="lpn" type="uint16"/>
+                <param datatype="uint16" name="src" type="uint16"/>
+                <param datatype="uint16" name="dst" type="uint16"/>
+                <param datatype="uint32" name="ivi" type="uint32"/>
+                <param datatype="uint32" name="seq" type="uint32"/>
+                <param datatype="uint8" name="reason" type="uint8"/>
             </params>
         </event>
     </class>

@@ -30,28 +30,29 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.util import BtMeshApp
-class FactoryReset(BtMeshApp):
-      """ Implementation of the general APIs. """
-      # Node reset
-      def node_reset(self):
-            """ Initiate node reset."""
-            # Perform a factory reset of the node. This removes all the keys
-            # and other settings that have been configured for this node
-            self.lib.btmesh.node.reset()
-            # 2 seconds delay is required to finalize node reset
-            time.sleep(2)
-            self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
-            self.log.info("Node reset")
 
-      # Full factory reset
-      def factory_reset(self):
-            """ Initiate full factory reset."""
-            # Perform a factory reset of the node. This removes all the keys
-            # and other settings that have been configured for this node and
-            # erases the NVM
-            self.lib.btmesh.node.reset()
-            self.lib.bt.nvm.erase_all()
-            # 2 seconds delay is required to finalize node reset
-            time.sleep(2)
-            self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
-            self.log.info("Factory reset")
+class FactoryReset(BtMeshApp):
+    """ Implementation of the general APIs. """
+    # Node reset
+    def node_reset(self):
+        """ Initiate node reset."""
+        # Perform a factory reset of the node. This removes all the keys
+        # and other settings that have been configured for this node
+        self.lib.btmesh.node.reset()
+        # 2 seconds delay is required to finalize node reset
+        time.sleep(2)
+        self.lib.bt.system.reboot()
+        self.log.info("Node reset")
+
+    # Full factory reset
+    def factory_reset(self):
+        """ Initiate full factory reset."""
+        # Perform a factory reset of the node. This removes all the keys
+        # and other settings that have been configured for this node and
+        # erases the NVM
+        self.lib.btmesh.node.reset()
+        self.lib.bt.nvm.erase_all()
+        # 2 seconds delay is required to finalize node reset
+        time.sleep(2)
+        self.lib.bt.system.reboot()
+        self.log.info("Factory reset")

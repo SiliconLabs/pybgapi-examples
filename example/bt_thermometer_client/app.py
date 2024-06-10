@@ -25,12 +25,14 @@ Thermometer Client NCP-host Example Application.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+from dataclasses import dataclass
 import os.path
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 from common.conversion import Ieee11073Float
 from common.util import ArgumentParser, BluetoothApp, get_connector, find_service_in_advertisement
+import common.status as status
 
 # Constants
 HEALTH_THERMOMETER_SERVICE = b"\x09\x18"
@@ -50,129 +52,137 @@ SCAN_PASSIVE = 0
 # The maximum number of connections has to match with the configuration on the target side.
 SL_BT_CONFIG_MAX_CONNECTIONS = 4
 
+@dataclass
+class Connection:
+    """ Connection representation """
+    address: str
+    address_type: int
+    service: int=None
+    characteristic: int=None
+
 class App(BluetoothApp):
     """ Application derived from generic BluetoothApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
-        # This event indicates the device has started and the radio is ready.
-        # Do not call any stack command before receiving this boot event!
-        if evt == "bt_evt_system_boot":
-            # Set the default connection parameters for subsequent connections
-            self.lib.bt.connection.set_default_parameters(
-                CONN_INTERVAL_MIN,
-                CONN_INTERVAL_MAX,
-                CONN_SLAVE_LATENCY,
-                CONN_TIMEOUT,
-                CONN_MIN_CE_LENGTH,
-                CONN_MAX_CE_LENGTH)
-            # Start scanning - looking for thermometer devices
-            self.lib.bt.scanner.start(
-                self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
-                self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
-            self.conn_state = "scanning"
-            self.conn_properties = {}
+    def bt_evt_system_boot(self, evt):
+        """ Bluetooth event callback
 
-        # This event is generated when an advertisement packet or a scan response
-        # is received from a responder
-        elif evt == "bt_evt_scanner_legacy_advertisement_report":
-            # Parse advertisement packets
-            if (evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_CONNECTABLE and
-                evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_SCANNABLE):
-                # If a thermometer advertisement is found...
-                if find_service_in_advertisement(evt.data, HEALTH_THERMOMETER_SERVICE):
-                    # then stop scanning for a while
-                    self.lib.bt.scanner.stop()
-                    # and connect to that device
-                    if len(self.conn_properties) < SL_BT_CONFIG_MAX_CONNECTIONS:
-                        self.lib.bt.connection.open(
-                            evt.address,
-                            evt.address_type,
-                            self.lib.bt.gap.PHY_PHY_1M)
-                        self.conn_state = "opening"
+        This event indicates that the device has started and the radio is ready.
+        Do not call any stack command before receiving this boot event!
+        """
+        # Set the default connection parameters for subsequent connections
+        self.lib.bt.connection.set_default_parameters(
+            CONN_INTERVAL_MIN,
+            CONN_INTERVAL_MAX,
+            CONN_SLAVE_LATENCY,
+            CONN_TIMEOUT,
+            CONN_MIN_CE_LENGTH,
+            CONN_MAX_CE_LENGTH)
+        # Start scanning - looking for thermometer devices
+        self.lib.bt.scanner.start(
+            self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
+            self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
+        self.log.info("Scanning started...")
+        self.conn_state = "scanning"
+        self.connections = dict[int, Connection]()
 
-        # This event indicates that a new connection was opened.
-        elif evt == "bt_evt_connection_opened":
-            print("\nConnection opened\n")
-            self.conn_properties[evt.connection] = {}
-            # Only the last 3 bytes of the address are relevant
-            self.conn_properties[evt.connection]["server_address"] = evt.address[9:].upper()
-            # Discover Health Thermometer service on the slave device
-            self.lib.bt.gatt.discover_primary_services_by_uuid(
+    def bt_evt_scanner_legacy_advertisement_report(self, evt):
+        """ Bluetooth event callback """
+        # Parse advertisement packets
+        if (evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_CONNECTABLE and
+            evt.event_flags & self.lib.bt.scanner.EVENT_FLAG_EVENT_FLAG_SCANNABLE):
+            # If a thermometer advertisement is found...
+            if find_service_in_advertisement(evt.data, HEALTH_THERMOMETER_SERVICE):
+                # then stop scanning for a while
+                self.lib.bt.scanner.stop()
+                # and connect to that device
+                if len(self.connections) < SL_BT_CONFIG_MAX_CONNECTIONS:
+                    self.lib.bt.connection.open(
+                        evt.address,
+                        evt.address_type,
+                        self.lib.bt.gap.PHY_PHY_1M)
+                    self.conn_state = "opening"
+
+    def bt_evt_connection_opened(self, evt):
+        """ Bluetooth event callback """
+        self.log.info(f"Connection opened to {evt.address}")
+        self.connections[evt.connection] = Connection(evt.address, evt.address_type)
+        # Discover Health Thermometer service on the slave device
+        self.lib.bt.gatt.discover_primary_services_by_uuid(
+            evt.connection,
+            HEALTH_THERMOMETER_SERVICE)
+        self.conn_state = "discover_services"
+
+    def bt_evt_gatt_service(self, evt):
+        """ Bluetooth event callback """
+        self.connections[evt.connection].service = evt.service
+
+    def bt_evt_gatt_characteristic(self, evt):
+        """ Bluetooth event callback """
+        self.connections[evt.connection].characteristic = evt.characteristic
+
+    def bt_evt_gatt_procedure_completed(self, evt):
+        """ Bluetooth event callback """
+        if evt.result != status.OK:
+            address = self.connections[evt.connection].address
+            self.log.error(f"GATT procedure for {address} completed with status {evt.result:#x}: {evt.result}")
+            return
+        # If service discovery finished
+        if self.conn_state == "discover_services":
+            # Discover thermometer characteristic on the slave device
+            self.lib.bt.gatt.discover_characteristics_by_uuid(
                 evt.connection,
-                HEALTH_THERMOMETER_SERVICE)
-            self.conn_state = "discover_services"
+                self.connections[evt.connection].service,
+                TEMPERATURE_MEASUREMENT_CHAR)
+            self.conn_state = "discover_characteristics"
 
-        # This event is generated when a new service is discovered
-        elif evt == "bt_evt_gatt_service":
-            self.conn_properties[evt.connection]["thermometer_service_handle"] = evt.service
+        # If characteristic discovery finished
+        elif self.conn_state == "discover_characteristics":
+            # enable indications
+            self.lib.bt.gatt.set_characteristic_notification(
+                evt.connection,
+                self.connections[evt.connection].characteristic,
+                self.lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION)
+            self.conn_state = "enable_indication"
 
-        # This event is generated when a new characteristic is discovered
-        elif evt == "bt_evt_gatt_characteristic":
-            self.conn_properties[evt.connection]["thermometer_characteristic_handle"] = evt.characteristic
-
-        # This event is generated for various procedure completions, e.g. when a
-        # write procedure is completed, or service discovery is completed
-        elif evt == "bt_evt_gatt_procedure_completed":
-            # If service discovery finished
-            if self.conn_state == "discover_services":
-                # Discover thermometer characteristic on the slave device
-                self.lib.bt.gatt.discover_characteristics_by_uuid(
-                    evt.connection,
-                    self.conn_properties[evt.connection]["thermometer_service_handle"],
-                    TEMPERATURE_MEASUREMENT_CHAR)
-                self.conn_state = "discover_characteristics"
-
-            # If characteristic discovery finished
-            elif self.conn_state == "discover_characteristics":
-                # enable indications
-                self.lib.bt.gatt.set_characteristic_notification(
-                    evt.connection,
-                    self.conn_properties[evt.connection]["thermometer_characteristic_handle"],
-                    self.lib.bt.gatt.CLIENT_CONFIG_FLAG_INDICATION)
-                self.conn_state = "enable_indication"
-
-            # If indication enable process finished
-            elif self.conn_state == "enable_indication":
-                # and we can connect to more devices
-                if len(self.conn_properties) < SL_BT_CONFIG_MAX_CONNECTIONS:
-                    # start scanning again to find new devices
-                    self.lib.bt.scanner.start(
-                        self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
-                        self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
-                    self.conn_state = "scanning"
-                else:
-                    self.conn_state = "running"
-
-        # This event is generated when a connection is dropped
-        elif evt == "bt_evt_connection_closed":
-            print("Connection closed:", evt.connection)
-            del self.conn_properties[evt.connection]
-            if self.conn_state != "scanning":
+        # If indication enable process finished
+        elif self.conn_state == "enable_indication":
+            # and further connections are possible
+            if len(self.connections) < SL_BT_CONFIG_MAX_CONNECTIONS:
                 # start scanning again to find new devices
                 self.lib.bt.scanner.start(
                     self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
                     self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
                 self.conn_state = "scanning"
-
-        # This event is generated when a characteristic value was received e.g. an indication
-        elif evt == "bt_evt_gatt_characteristic_value":
-            self.conn_properties[evt.connection]["temperature"] = Ieee11073Float.from_bytes(evt.value[1:])
-            # The first byte of the characteristic value is the flags field,
-            # the first bit in the flags field encodes the temperature unit.
-            if evt.value[0] & 1:
-                self.conn_properties[evt.connection]["unit"] = "F"
             else:
-                self.conn_properties[evt.connection]["unit"] = "C"
-            # Send confirmation for the indication
-            self.lib.bt.gatt.send_characteristic_confirmation(evt.connection)
-            # Trigger RSSI measurement on the connection
-            self.lib.bt.connection.get_rssi(evt.connection)
+                self.conn_state = "running"
 
-        # This event is generated when RSSI value was measured
-        elif evt == "bt_evt_connection_rssi":
-            self.conn_properties[evt.connection]["rssi"] = evt.rssi
-            # Print the values
-            print("{server_address} [{rssi:4} dBm] {temperature:6.6} {unit}".format(**self.conn_properties[evt.connection]))
+    def bt_evt_connection_closed(self, evt):
+        """ Bluetooth event callback """
+        address = self.connections[evt.connection].address
+        self.log.info(f"Connection to {address} closed with reason {evt.reason:#x}: '{evt.reason}'")
+        del self.connections[evt.connection]
+        if self.conn_state != "scanning":
+            # start scanning again to find new devices
+            self.lib.bt.scanner.start(
+                self.lib.bt.scanner.SCAN_PHY_SCAN_PHY_1M,
+                self.lib.bt.scanner.DISCOVER_MODE_DISCOVER_GENERIC)
+            self.conn_state = "scanning"
+
+    def bt_evt_gatt_characteristic_value(self, evt):
+        """ Bluetooth event callback """
+        address = self.connections[evt.connection].address
+        temperature = Ieee11073Float.from_bytes(evt.value[1:])
+        # The first byte of the characteristic value is the flags field,
+        # the first bit in the flags field encodes the temperature unit.
+        if evt.value[0] & 1:
+            unit = "F"
+        else:
+            unit = "C"
+        # Send confirmation for the indication
+        self.lib.bt.gatt.send_characteristic_confirmation(evt.connection)
+        # Get the RSSI of the connection
+        _, rssi = self.lib.bt.connection.get_median_rssi(evt.connection)
+        # Print the values
+        print(f"{address} [{rssi:4} dBm] {temperature:6.6} {unit}")
 
 # Script entry point.
 if __name__ == "__main__":

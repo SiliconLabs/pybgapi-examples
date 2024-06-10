@@ -37,27 +37,28 @@ GATTDB_MANUFACTURER_NAME_STRING = b"Silicon Labs"
 
 class App(BluetoothApp):
     """ Application derived from generic BluetoothApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
-        # This event indicates the device has started and the radio is ready.
-        # Do not call any stack command before receiving this boot event!
-        if evt == "bt_evt_system_boot":
-            self.adv_handle = None
-            self.gattdb_init()
-            self.adv_start()
+    def bt_evt_system_boot(self, evt):
+        """ Bluetooth event callback
 
-        # This event indicates that a new connection was opened.
-        elif evt == "bt_evt_connection_opened":
-            print("Connection opened")
+        This event indicates that the device has started and the radio is ready.
+        Do not call any stack command before receiving this boot event!
+        """
+        self.adv_handle = None
+        self.gattdb_init()
+        self.adv_start()
 
-        # This event indicates that a connection was closed.
-        elif evt == "bt_evt_connection_closed":
-            print("Connection closed")
-            self.adv_start()
+    def bt_evt_connection_opened(self, evt):
+        """ Bluetooth event callback """
+        self.log.info(f"Connection opened to {evt.address}")
 
-        ####################################
-        # Add further event handlers here. #
-        ####################################
+    def bt_evt_connection_closed(self, evt):
+        """ Bluetooth event callback """
+        self.log.info(f"Connection closed with reason {evt.reason:#x}: '{evt.reason}'")
+        self.adv_start()
+
+    #####################################
+    # Add further event callbacks here. #
+    #####################################
 
     def gattdb_init(self):
         """ Initialize GATT database. """

@@ -182,7 +182,7 @@ class BluetoothApp(GenericApp):
 
     def reset(self):
         """ Reset Bluetooth device. """
-        self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
+        self.lib.bt.system.reboot()
 
 class BtMeshApp(GenericApp):
     """ Application class for Bluetooth mesh devices """
@@ -204,7 +204,7 @@ class BtMeshApp(GenericApp):
 
     def reset(self):
         """ Reset for Bluetooth mesh device """
-        self.lib.bt.system.reset(self.lib.bt.system.BOOT_MODE_BOOT_MODE_NORMAL)
+        self.lib.bt.system.reboot()
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter,
                           argparse.RawDescriptionHelpFormatter):

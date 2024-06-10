@@ -24,63 +24,63 @@ BtMesh NCP Light Server GUI.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
+from dataclasses import dataclass
 import tkinter
-import colour
 import os.path
 import logging
-from PIL import ImageTk,Image
+import colour
+from PIL import ImageTk, Image
 
-class windows(tkinter.Tk):
+class ResizableWindow(tkinter.Tk):
     """ Root window for the frame. """
     def __init__(self, app, *args, **kwargs):
         tkinter.Tk.__init__(self, *args, **kwargs)
-        self.protocol("WM_DELETE_WINDOW", app.stop)
-        self.resizable(0,0)
+        self.protocol("WM_DELETE_WINDOW", lambda args=app: self.exit(args))
+        self.resizable(1, 1)
 
         # Adding a title to the window
         self.wm_title("BT Mesh Light")
 
-        # Creating a frame and assigning it to container
-        container = tkinter.Frame(self, height=400, width=600)
-
         # Specifying the region where the frame is grided
-        container.grid(column=0, row=0)
-        self.geometry("300x160")
- 
-        # Configuring the location of the container using grid
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
+        self.geometry("350x160")
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
 
         frame = MainPage(self, app)
-        frame.grid(row=0, column=0, sticky="nsew")
-   
+        frame.grid(row=0, column=0, sticky=tkinter.NSEW)
+
+    def exit(self, app):
+        """ Shuting down the app. """
+        app.stop()
+        self.destroy()
+
 class MainPage(tkinter.Frame):
-    """ Implementation of the used frame. """
+    """Implementation of the used frame."""
     __instance = None
-    @staticmethod
     def get_instance(self):
-        if MainPage.__instance == None:
+        """ Getting GUI instance. """
+        if MainPage.__instance is None:
             self.gui_log.info("No instance for GUI yet")
         return MainPage.__instance
 
     def __init__(self, parent, app):
         self.gui_log = logging.getLogger(str(type(self)))
         tkinter.Frame.__init__(self, parent)
-        if MainPage.__instance != None:
+        if MainPage.__instance is not None:
             self.gui_log.error("GUI instance is already present")
             return
         self.root = self
         self.app = app
         MainPage.__instance = self
-        
+
         # Variables
-        self.lightness_value = tkinter.IntVar()
-        self.temperature_value = tkinter.IntVar()
-        self.temperature_value.set(6500)
-        self.delta_uv_value = tkinter.DoubleVar()
+        self.CTLLightbulbState.lightness_value = tkinter.IntVar()
+        self.CTLLightbulbState.temperature_value = tkinter.IntVar()
+        self.CTLLightbulbState.temperature_value.set(6500)
+        self.CTLLightbulbState.delta_uv_value = tkinter.DoubleVar()
         # Image size
-        self.pixels_x = 100
-        self.pixels_y = 100
+        pixels_x = 100
+        pixels_y = 100
 
         # Lightness
         slider_label = tkinter.Label(
@@ -89,20 +89,20 @@ class MainPage(tkinter.Frame):
         )
 
         slider_label.grid(
-            row=1,
-            column=2,
-            sticky=tkinter.S
+            row=0,
+            column=1,
+            sticky=tkinter.EW
         )
 
         self.lightness_value_label = tkinter.Label(
             self,
-            text=f"{self.lightness_value.get()}%"
+            text=f"{self.CTLLightbulbState.lightness_value.get()}%"
         )
 
         self.lightness_value_label.grid(
-            row=1,
-            column=3,
-            sticky=tkinter.SE,
+            row=0,
+            column=2,
+            sticky=tkinter.EW,
             padx=5,
             pady=5
         )
@@ -114,20 +114,20 @@ class MainPage(tkinter.Frame):
         )
 
         slider_label.grid(
-            column=2,
-            row=2,
-            sticky=tkinter.S
+            column=1,
+            row=1,
+            sticky=tkinter.EW
         )
 
         self.temperature_value_label = tkinter.Label(
             self,
-            text=f"{self.temperature_value.get()}K"
+            text=f"{self.CTLLightbulbState.temperature_value.get()}K"
         )
 
         self.temperature_value_label.grid(
-            row=2,
-            column=3,
-            sticky=tkinter.SE,
+            row=1,
+            column=2,
+            sticky=tkinter.EW,
             padx=5,
             pady=5
         )
@@ -139,19 +139,19 @@ class MainPage(tkinter.Frame):
         )
 
         slider_label.grid(
-            column=2,
-            row=3,
-            sticky=tkinter.S
+            column=1,
+            row=2,
+            sticky=tkinter.EW
         )
 
         self.delta_uv_value_label = tkinter.Label(
             self,
-            text=f"{self.delta_uv_value.get():.2f}"
+            text=f"{self.CTLLightbulbState.delta_uv_value.get():.2f}"
         )
         self.delta_uv_value_label.grid(
-            row=3,
-            column=3,
-            sticky=tkinter.SE,
+            row=2,
+            column=2,
+            sticky=tkinter.EW,
             padx=5,
             pady=5
         )
@@ -164,9 +164,9 @@ class MainPage(tkinter.Frame):
         )
 
         factory_reset.grid(
-            row=4,
-            column=3,
-            sticky=tkinter.SE,
+            row=3,
+            column=2,
+            sticky=tkinter.EW,
             padx=5,
             pady=5
         )
@@ -179,48 +179,58 @@ class MainPage(tkinter.Frame):
         )
 
         node_reset.grid(
-            row=4,
-            column=1,
-            sticky=tkinter.SW,
+            row=3,
+            column=0,
+            sticky=tkinter.EW,
             padx=5,
             pady=5
         )
 
-        ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-        image_path = Image.open(os.path.join(ROOT_DIR, 'btmesh_light\images', 'lightbulb.png'))
-        self.load_image = ImageTk.PhotoImage(image_path.resize((self.pixels_x, self.pixels_y)))
+        project_directory = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+        image_path = Image.open(os.path.join(project_directory, 'btmesh_light', 'images',
+                                            'lightbulb.png'))
+        self.load_image = ImageTk.PhotoImage(image_path.resize((pixels_x, pixels_y)))
         self.lightbulb_image = tkinter.Label(self, image=self.load_image, borderwidth=4, bg="black")
 
         self.lightbulb_image.grid(
-            row=1,
+            row=0,
             column=0,
             rowspan=3,
-            columnspan=2,
             padx=5,
-            pady=5)
+            pady=5
+        )
 
-    __instance = None
-    @staticmethod
-    def get_instance():
-        if MainPage.__instance == None:
-            self.gui_log.info("no instance yet")
-        return MainPage.__instance
+        self.columnconfigure((0,1,2), weight=1, uniform='column')
+        self.rowconfigure((0,1,2,3), weight=1, uniform='row')
+
+    @dataclass
+    class CTLLightbulbState:
+        """ Dataclass of CTL ligthbulb state. """
+        # Value of lightness
+        lightness_value = None
+        # Value of temperature
+        temperature_value = None
+        # Value of deltauv
+        delta_uv_value = None
 
     def set_lightness_value(self, value):
         """ Set the Lightness value and updates the GUI. """
-        self.lightness_value.set(value)
-        self.lightness_value_label.configure(text=f"{self.lightness_value.get()}%")
+        self.CTLLightbulbState.lightness_value.set(value)
+        self.lightness_value_label.configure(text=
+                                             f"{self.CTLLightbulbState.lightness_value.get()}%")
 
     def set_temperature_value(self, value):
         """ Set the Temperature value and updates the GUI. """
-        self.temperature_value.set(value)
-        self.temperature_value_label.configure(text=f"{self.temperature_value.get()}K")
+        self.CTLLightbulbState.temperature_value.set(value)
+        self.temperature_value_label.configure(text=
+                                               f"{self.CTLLightbulbState.temperature_value.get()}K")
 
     def set_delta_uv_value(self, value):
         """ Set the Delta UV value and updates the GUI. """
-        self.delta_uv_value.set(value)
-        self.delta_uv_value_label.configure(text=f"{self.delta_uv_value.get():.2f}")
-    
+        self.CTLLightbulbState.delta_uv_value.set(value)
+        self.delta_uv_value_label.configure(text=
+                                            f"{self.CTLLightbulbState.delta_uv_value.get():.2f}")
+
     def factory_reset(self):
         """ Call the factory reset function from the General class. """
         self.set_lightness_value(0)
@@ -246,25 +256,32 @@ class MainPage(tkinter.Frame):
         :param trans_ms: transition time in ms
         """
         if trans_ms == 0:
-            widget.config(bg = bg)
+            widget.config(bg=bg)
         else:
-            if not getattr(widget, '_after_ids', None): widget._after_ids = {}
-            widget.after_cancel(widget._after_ids.get("bg", ' '))
-            c1 = tuple(map(lambda a: a/(65535), widget.winfo_rgb(widget["bg"])))
-            c2 = tuple(map(lambda a: a/(65535), widget.winfo_rgb(bg)))
+            if not getattr(widget, "_after_ids", None):
+                widget._after_ids = {}
+            widget.after_cancel(widget._after_ids.get("bg", " "))
+            c1 = tuple(map(lambda a: a / (65535), widget.winfo_rgb(widget["bg"])))
+            c2 = tuple(map(lambda a: a / (65535), widget.winfo_rgb(bg)))
 
-            colors = tuple(colour.rgb2hex(c, force_long=True)
-            for c in colour.color_scale(c1, c2, max(1, int((trans_ms*60)//1000))))
+            colors = tuple(
+                colour.rgb2hex(c, force_long=True)
+                for c in colour.color_scale(
+                    c1, c2, max(1, int((trans_ms * 60) // 1000))
+                )
+            )
 
             def worker(count=0):
-                if len(colors)-1 <= count:
+                if len(colors) - 1 <= count:
                     return
-                widget.config({"bg" : colors[count]})
-                widget._after_ids.update( { "bg": widget.after(
-                    1000//60, worker, count+1) } )
+                widget.config({"bg": colors[count]})
+                widget._after_ids.update(
+                    {"bg": widget.after(1000 // 60, worker, count + 1)}
+                )
 
             worker()
 
-    def lighting_server_gui_thread(app):
-        gui=windows(app=app)
-        gui.mainloop()
+def lighting_server_gui_start(app):
+    """ Starting the GUI. """
+    gui = ResizableWindow(app=app)
+    gui.mainloop()

@@ -282,6 +282,32 @@ INVALID_CHANNEL_MASK = Status(0x004F)
 BAD_SCAN_DURATION = Status(0x0050)
 """Bad scan duration."""
 
+# MAC transmit related status
+MAC_TRANSMIT_QUEUE_FULL = Status(0x0053)
+"""The MAC transmit queue is full"""
+TRANSMIT_SCHEDULER_FAIL = Status(0x0054)
+"""The transmit attempt failed because the radio scheduler could not find a slot to transmit this packet in or a higher priority event interrupted it"""
+TRANSMIT_INVALID_CHANNEL = Status(0x0055)
+"""An unsupported channel setting was specified"""
+TRANSMIT_INVALID_POWER = Status(0x0056)
+"""An unsupported power setting was specified"""
+TRANSMIT_ACK_RECEIVED = Status(0x0057)
+"""The expected ACK was received after the last transmission"""
+TRANSMIT_BLOCKED = Status(0x0058)
+"""The transmit attempt was blocked from going over the air. Typically this is due to the Radio Hold Off (RHO) or Coexistence plugins as they can prevent transmits based on external signals."""
+
+# NVM3 specific errors
+NVM3_ALIGNMENT_INVALID = Status(0x0059)
+"""The initialization was aborted as the NVM3 instance is not aligned properly in memory"""
+NVM3_SIZE_TOO_SMALL = Status(0x005A)
+"""The initialization was aborted as the size of the NVM3 instance is too small"""
+NVM3_PAGE_SIZE_NOT_SUPPORTED = Status(0x005B)
+"""The initialization was aborted as the NVM3 page size is not supported"""
+NVM3_TOKEN_INIT_FAILED = Status(0x005C)
+"""The application that there was an error initializing some of the tokens"""
+NVM3_OPENED_WITH_OTHER_PARAMETERS = Status(0x005D)
+"""The initialization was aborted as the NVM3 instance was already opened with other parameters"""
+
 # Bluetooth status codes
 BT_OUT_OF_BONDS = Status(0x0402)
 """Bonding procedure can't be started because device has no space left for bond."""
@@ -662,6 +688,68 @@ COMPUTE_MATH_OVERFLOW = Status(0x1514)
 COMPUTE_MATH_UNDERFLOW = Status(0x1515)
 """MATH numeric underflow"""
 
+# Zigbee status codes
+ZIGBEE_PACKET_HANDOFF_DROPPED = Status(0x0C01)
+"""Packet is dropped by packet-handoff callbacks"""
+ZIGBEE_DELIVERY_FAILED = Status(0x0C02)
+"""The APS layer attempted to send or deliver a message and failed"""
+ZIGBEE_MAX_MESSAGE_LIMIT_REACHED = Status(0x0C03)
+"""The maximum number of in-flight messages ::EMBER_APS_UNICAST_MESSAGE_COUNT has been reached"""
+ZIGBEE_BINDING_IS_ACTIVE = Status(0x0C04)
+"""The application is trying to delete or overwrite a binding that is in use"""
+ZIGBEE_ADDRESS_TABLE_ENTRY_IS_ACTIVE = Status(0x0C05)
+"""The application is trying to overwrite an address table entry that is in use"""
+ZIGBEE_MOVE_FAILED = Status(0x0C06)
+"""After moving, a mobile node's attempt to re-establish contact with the network failed"""
+ZIGBEE_NODE_ID_CHANGED = Status(0x0C07)
+"""The local node ID has changed. The application can get the new node ID by calling ::sl_zigbee_get_node_id()"""
+ZIGBEE_INVALID_SECURITY_LEVEL = Status(0x0C08)
+"""The chosen security level is not supported by the stack"""
+ZIGBEE_IEEE_ADDRESS_DISCOVERY_IN_PROGRESS = Status(0x0C09)
+"""An error occurred when trying to encrypt at the APS Level"""
+ZIGBEE_APS_ENCRYPTION_ERROR = Status(0x0C0A)
+"""An error occurred when trying to encrypt at the APS Level"""
+ZIGBEE_SECURITY_STATE_NOT_SET = Status(0x0C0B)
+"""There was an attempt to form or join a network with security without calling ::sl_zigbee_set_initial_security_state() first"""
+ZIGBEE_TOO_SOON_FOR_SWITCH_KEY = Status(0x0C0C)
+"""There was an attempt to broadcast a key switch too quickly after broadcasting the next network key. The Trust Center must wait at least a period equal to the broadcast timeout so that all routers have a chance to receive the broadcast of the new network key"""
+ZIGBEE_SIGNATURE_VERIFY_FAILURE = Status(0x0C0D)
+"""The received signature corresponding to the message that was passed to the CBKE Library failed verification and is not valid"""
+ZIGBEE_KEY_NOT_AUTHORIZED = Status(0x0C0E)
+"""The message could not be sent because the link key corresponding to the destination is not authorized for use in APS data messages"""
+ZIGBEE_BINDING_HAS_CHANGED = Status(0x0C0F)
+"""The application tried to use a binding that has been remotely modified and the change has not yet been reported to the application"""
+ZIGBEE_TRUST_CENTER_SWAP_EUI_HAS_CHANGED = Status(0x0C10)
+"""The EUI of the Trust center has changed due to a successful rejoin after TC Swapout"""
+ZIGBEE_TRUST_CENTER_SWAP_EUI_HAS_NOT_CHANGED = Status(0x0C11)
+"""A Trust Center Swapout Rejoin has occurred without the EUI of the TC changing"""
+ZIGBEE_INSUFFICIENT_RANDOM_DATA = Status(0x0C12)
+"""An attempt to generate random bytes failed because of insufficient random data from the radio"""
+ZIGBEE_SOURCE_ROUTE_FAILURE = Status(0x0C13)
+"""A Zigbee route error command frame was received indicating that a source routed message from this node failed en route"""
+ZIGBEE_MANY_TO_ONE_ROUTE_FAILURE = Status(0x0C14)
+"""A Zigbee route error command frame was received indicating that a message sent to this node along a many-to-one route failed en route"""
+ZIGBEE_STACK_AND_HARDWARE_MISMATCH = Status(0x0C15)
+"""A critical and fatal error indicating that the version of the stack trying to run does not match with the chip it's running on"""
+ZIGBEE_PAN_ID_CHANGED = Status(0x0C16)
+"""The local PAN ID has changed. The application can get the new PAN ID by calling ::emberGetPanId()"""
+ZIGBEE_CHANNEL_CHANGED = Status(0x0C17)
+"""The channel has changed."""
+ZIGBEE_NETWORK_OPENED = Status(0x0C18)
+"""The network has been opened for joining."""
+ZIGBEE_NETWORK_CLOSED = Status(0x0C19)
+"""The network has been closed for joining."""
+ZIGBEE_RECEIVED_KEY_IN_THE_CLEAR = Status(0x0C1A)
+"""An attempt was made to join a Secured Network using a pre-configured key, but the Trust Center sent back a Network Key in-the-clear when an encrypted Network Key was required. (::EMBER_REQUIRE_ENCRYPTED_KEY)"""
+ZIGBEE_NO_NETWORK_KEY_RECEIVED = Status(0x0C1B)
+"""An attempt was made to join a Secured Network, but the device did not receive a Network Key."""
+ZIGBEE_NO_LINK_KEY_RECEIVED = Status(0x0C1C)
+"""After a device joined a Secured Network, a Link Key was requested (::EMBER_GET_LINK_KEY_WHEN_JOINING) but no response was ever received."""
+ZIGBEE_PRECONFIGURED_KEY_REQUIRED = Status(0x0C1D)
+"""An attempt was made to join a Secured Network without a pre-configured key, but the Trust Center sent encrypted data using a pre-configured key."""
+ZIGBEE_EZSP_ERROR = Status(0x0C1E)
+"""A Zigbee EZSP error has occured. Track the origin and corresponding EzspStatus for more info."""
+
 _doc = {
     # Generic Errors
     0x0000: "No error.",
@@ -769,6 +857,21 @@ _doc = {
     0x004E: "MAC incorrect scan type.",
     0x004F: "Invalid channel mask.",
     0x0050: "Bad scan duration.",
+
+    # MAC transmit related status
+    0x0053: "The MAC transmit queue is full",
+    0x0054: "The transmit attempt failed because the radio scheduler could not find a slot to transmit this packet in or a higher priority event interrupted it",
+    0x0055: "An unsupported channel setting was specified",
+    0x0056: "An unsupported power setting was specified",
+    0x0057: "The expected ACK was received after the last transmission",
+    0x0058: "The transmit attempt was blocked from going over the air. Typically this is due to the Radio Hold Off (RHO) or Coexistence plugins as they can prevent transmits based on external signals.",
+
+    # NVM3 specific errors
+    0x0059: "The initialization was aborted as the NVM3 instance is not aligned properly in memory",
+    0x005A: "The initialization was aborted as the size of the NVM3 instance is too small",
+    0x005B: "The initialization was aborted as the NVM3 page size is not supported",
+    0x005C: "The application that there was an error initializing some of the tokens",
+    0x005D: "The initialization was aborted as the NVM3 instance was already opened with other parameters",
 
     # Bluetooth status codes
     0x0402: "Bonding procedure can't be started because device has no space left for bond.",
@@ -966,7 +1069,39 @@ _doc = {
     0x1512: "MATH NaN encountered",
     0x1513: "MATH Infinity encountered",
     0x1514: "MATH numeric overflow",
-    0x1515: "MATH numeric underflow"
+    0x1515: "MATH numeric underflow",
+
+    # Zigbee status codes
+    0x0C01: "Packet is dropped by packet-handoff callbacks",
+    0x0C02: "The APS layer attempted to send or deliver a message and failed",
+    0x0C03: "The maximum number of in-flight messages ::EMBER_APS_UNICAST_MESSAGE_COUNT has been reached",
+    0x0C04: "The application is trying to delete or overwrite a binding that is in use",
+    0x0C05: "The application is trying to overwrite an address table entry that is in use",
+    0x0C06: "After moving, a mobile node's attempt to re-establish contact with the network failed",
+    0x0C07: "The local node ID has changed. The application can get the new node ID by calling ::sl_zigbee_get_node_id()",
+    0x0C08: "The chosen security level is not supported by the stack",
+    0x0C09: "An error occurred when trying to encrypt at the APS Level",
+    0x0C0A: "An error occurred when trying to encrypt at the APS Level",
+    0x0C0B: "There was an attempt to form or join a network with security without calling ::sl_zigbee_set_initial_security_state() first",
+    0x0C0C: "There was an attempt to broadcast a key switch too quickly after broadcasting the next network key. The Trust Center must wait at least a period equal to the broadcast timeout so that all routers have a chance to receive the broadcast of the new network key",
+    0x0C0D: "The received signature corresponding to the message that was passed to the CBKE Library failed verification and is not valid",
+    0x0C0E: "The message could not be sent because the link key corresponding to the destination is not authorized for use in APS data messages",
+    0x0C0F: "The application tried to use a binding that has been remotely modified and the change has not yet been reported to the application",
+    0x0C10: "The EUI of the Trust center has changed due to a successful rejoin after TC Swapout",
+    0x0C11: "A Trust Center Swapout Rejoin has occurred without the EUI of the TC changing",
+    0x0C12: "An attempt to generate random bytes failed because of insufficient random data from the radio",
+    0x0C13: "A Zigbee route error command frame was received indicating that a source routed message from this node failed en route",
+    0x0C14: "A Zigbee route error command frame was received indicating that a message sent to this node along a many-to-one route failed en route",
+    0x0C15: "A critical and fatal error indicating that the version of the stack trying to run does not match with the chip it's running on",
+    0x0C16: "The local PAN ID has changed. The application can get the new PAN ID by calling ::emberGetPanId()",
+    0x0C17: "The channel has changed.",
+    0x0C18: "The network has been opened for joining.",
+    0x0C19: "The network has been closed for joining.",
+    0x0C1A: "An attempt was made to join a Secured Network using a pre-configured key, but the Trust Center sent back a Network Key in-the-clear when an encrypted Network Key was required. (::EMBER_REQUIRE_ENCRYPTED_KEY)",
+    0x0C1B: "An attempt was made to join a Secured Network, but the device did not receive a Network Key.",
+    0x0C1C: "After a device joined a Secured Network, a Link Key was requested (::EMBER_GET_LINK_KEY_WHEN_JOINING) but no response was ever received.",
+    0x0C1D: "An attempt was made to join a Secured Network without a pre-configured key, but the Trust Center sent encrypted data using a pre-configured key.",
+    0x0C1E: "A Zigbee EZSP error has occured. Track the origin and corresponding EzspStatus for more info."
 }
 
 if __name__ == "__main__":

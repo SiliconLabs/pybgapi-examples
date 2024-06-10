@@ -24,12 +24,18 @@ BtMesh Switch NCP-host Light Lightness Client Model.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import threading
-import os.path
+from dataclasses import dataclass
+import os
 import sys
+import threading
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-
 from common.util import BtMeshApp
+import common.btmesh_models as model
+
+# Immediate transition time is 0 seconds
+IMMEDIATE = 0
+# No flags used for message
+NO_FLAGS = 0
 
 class LightnessClient(BtMeshApp):
     """ Implementation of the Light Lightness Client Model specific APIs. """
@@ -37,14 +43,6 @@ class LightnessClient(BtMeshApp):
         super().__init__(connector=connector, **kwargs)
         # Lightness transaction identifier
         self.lightness_trid = 0
-        # Lightness level converted from percentage to actual value, range 0..65535
-        self.lightness_level = 0
-        # Lightness level percentage
-        self.lightness_percentage = 0
-        # No flags used for message
-        self.no_flags = 0
-        # Immediate transition time is 0 seconds
-        self.immediate = 0
         # Delay time (in milliseconds) before starting the state change
         self.request_delay = 50
         # Transition time (in milliseconds) for the state change
@@ -53,8 +51,16 @@ class LightnessClient(BtMeshApp):
         # How many times Lightness model messages are to be sent out for reliability
         # Using three by default
         self.lightness_request_count = 3
+
+    @dataclass
+    class Lightness:
+        """ Dataclass of lightness values. """
+        # Lightness level converted from percentage to actual value, range 0..65535
+        lightness_level = 0
+        # Lightness level percentage
+        lightness_percentage = 0
         # Maximum lightness percentage value
-        self.lightness_pct_max = 100
+        lightness_pct_max = 100
 
     def send_lightness_actual_request(self):
         """
@@ -67,14 +73,15 @@ class LightnessClient(BtMeshApp):
         self.lightness_trid %= 256
 
         # Starting two new timer threads for the second and third message.
-        for count in range (1, self.lightness_request_count, 1):
-            threading.Timer(
-                count*self.request_delay*0.001,
-                self.lightness_actual_request,
-                args = [self.lightness_level, self.lightness_request_count-count]).start()
-                
+        for count in range(1, self.lightness_request_count, 1):
+            threading.Timer(count * self.request_delay * 0.001,
+                            self.lightness_actual_request,
+                            args=[self.Lightness.lightness_level,
+                                  self.lightness_request_count - count]).start()
+
         # First message with 0ms delay
-        self.lightness_actual_request(self.lightness_level, self.lightness_request_count)
+        self.lightness_actual_request(self.Lightness.lightness_level,
+                                      self.lightness_request_count)
 
     def lightness_actual_request(self, lightness, count):
         """
@@ -83,19 +90,20 @@ class LightnessClient(BtMeshApp):
         :param lightness: holds the latest desired lightness state in percentage
         :param count: number of repetition
         """
-        delay = (count-1) * self.request_delay
+        delay = (count - 1) * self.request_delay
         if count > 0:
             self.lib.btmesh.generic_client.publish(
                 0,
-                0x1302,
+                model.BTMESH_LIGHTING_LIGHTNESS_CLIENT_MODEL_ID,
                 self.lightness_trid,
-                self.immediate,
+                IMMEDIATE,
                 delay,
-                self.no_flags,
+                NO_FLAGS,
                 self.lib.btmesh.generic_client.SET_REQUEST_TYPE_REQUEST_LIGHTNESS_ACTUAL,
-                lightness.to_bytes(2, byteorder='little'))
+                lightness.to_bytes(2, byteorder="little"),
+            )
 
-            print(f"Lightness actual request, trid: {self.lightness_trid}, delay: {delay}")
+            self.log.info(f"Lightness actual request, trid: {self.lightness_trid}, delay: {delay}")
 
     def convert_lightness_percentage(self, lightness):
         """
@@ -104,7 +112,7 @@ class LightnessClient(BtMeshApp):
 
         :param lightness: lightness in percentage
         """
-        return (lightness * 0xFFFF) // self.lightness_pct_max
+        return (lightness * 0xFFFF) // self.Lightness.lightness_pct_max
 
     def set_lightness(self, set_percentage):
         """
@@ -113,12 +121,12 @@ class LightnessClient(BtMeshApp):
 
         :param set_percentage: desired lightness state given by the user
         """
-        if set_percentage > self.lightness_pct_max:
-            self.lightness_percentage = self.lightness_pct_max
+        if set_percentage > self.Lightness.lightness_pct_max:
+            self.Lightness.lightness_percentage = self.Lightness.lightness_pct_max
         elif set_percentage < 0:
-            self.lightness_percentage = 0
+            self.Lightness.lightness_percentage = 0
         else:
-            self.lightness_percentage = set_percentage
+            self.Lightness.lightness_percentage = set_percentage
 
-        self.lightness_level = self.convert_lightness_percentage(set_percentage)
+        self.Lightness.lightness_level = self.convert_lightness_percentage(set_percentage)
         self.send_lightness_actual_request()

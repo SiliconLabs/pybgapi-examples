@@ -30,15 +30,16 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
 
 from common.util import BtMeshApp
+import common.btmesh_models as model
 
+# No flags used for message
+NO_FLAGS = 0
 class OnOffClient(BtMeshApp):
-    """ Implement Generic OnOff Client Model specific APIs."""
+    """ Implement Generic OnOff Client Model specific APIs. """
     def __init__(self, connector, **kwargs):
         super().__init__(connector=connector, **kwargs)
         # On/off transaction identifier
         self.onoff_trid = 0
-        # No flags used for message
-        self.no_flags = 0
         # Delay time (in milliseconds) before starting the state change
         self.request_delay = 50
         # Transition time (in milliseconds) for the state change
@@ -52,19 +53,20 @@ class OnOffClient(BtMeshApp):
         self.switch_pos = 0
 
     def send_onoff_request(self):
-        """ Call 'onoff_request' with 'request_delay' intervals for 'ctl_request_count' times. """
-
+        """ 
+        Call 'onoff_request' with 'request_delay' intervals for 
+        'ctl_request_count' times. 
+        """
         # Increment transaction ID for each request, unless it's a retransmission
         self.onoff_trid += 1
         self.onoff_trid %= 256
 
         # Starting two new timer threads for the second and third message
-        for count in range (1, self.onoff_request_count, 1):
-            threading.Timer(
-            count*self.request_delay*0.001,
-            self.onoff_request,
-            args = [self.switch_pos, self.onoff_request_count-count]).start()
-            
+        for count in range(1, self.onoff_request_count, 1):
+            threading.Timer(count * self.request_delay * 0.001,
+                            self.onoff_request,
+                            args=[self.switch_pos, self.onoff_request_count - count]).start()
+
         # First message with 0ms delay
         self.onoff_request(self.switch_pos, self.onoff_request_count)
 
@@ -75,17 +77,18 @@ class OnOffClient(BtMeshApp):
         :param switch_pos: holds the latest desired light state
         :param count: number of repetition
         """
-        delay = (count-1) * self.request_delay
+        delay = (count - 1) * self.request_delay
         if count > 0:
             self.lib.btmesh.generic_client.publish(
                 0,
-                0x1001,
+                model.BTMESH_GENERIC_ON_OFF_CLIENT_MODEL_ID,
                 self.onoff_trid,
                 self.transtime,
                 delay,
-                self.no_flags,
+                NO_FLAGS,
                 self.lib.btmesh.generic_client.SET_REQUEST_TYPE_REQUEST_ON_OFF,
-                switch_pos.to_bytes(1, byteorder='little'))
+                switch_pos.to_bytes(1, byteorder='little')
+            )
 
             self.log.info(f"On/off request, trid: {self.onoff_trid}, delay: {delay}")
 
@@ -94,7 +97,8 @@ class OnOffClient(BtMeshApp):
         Check if the given value is valid. Valid values are 0 or 1.
         If the value is not valid then the function adjusts it to be a proper value.
 
-        :param set_switch: desired light state given by the user"""
+        :param set_switch: desired light state given by the user
+        """
         if set_switch > 1:
             self.switch_pos = 1
         elif set_switch < 0:

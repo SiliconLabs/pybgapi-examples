@@ -48,45 +48,45 @@ GATTDB_TEMPERATURE_TYPE = b"\x02" # Body
 
 class App(BluetoothApp):
     """ Application derived from generic BluetoothApp. """
-    def event_handler(self, evt):
-        """ Override default event handler of the parent class. """
-        # This event indicates the device has started and the radio is ready.
-        # Do not call any stack command before receiving this boot event!
-        if evt == "bt_evt_system_boot":
-            # Init threading only once
-            if not hasattr(self, "indication_thread"):
-                self.indication_event = threading.Event()
-                self.indication_thread = threading.Thread(target=self.indication_task, daemon=True)
-                self.indication_thread.start()
-            self.indication_event.clear()
-            self.adv_handle = None
-            self.temperature = 0
-            self.gattdb_init()
-            self.adv_start()
+    def bt_evt_system_boot(self, evt):
+        """ Bluetooth event callback
 
-        # This event indicates that a new connection was opened.
-        elif evt == "bt_evt_connection_opened":
-            print("Connection opened")
+        This event indicates that the device has started and the radio is ready.
+        Do not call any stack command before receiving this boot event!
+        """
+        # Init threading only once
+        if not hasattr(self, "indication_thread"):
+            self.indication_event = threading.Event()
+            self.indication_thread = threading.Thread(target=self.indication_task, daemon=True)
+            self.indication_thread.start()
+        self.indication_event.clear()
+        self.adv_handle = None
+        self.temperature = 0
+        self.gattdb_init()
+        self.adv_start()
 
-        # This event indicates that a connection was closed.
-        elif evt == "bt_evt_connection_closed":
-            self.indication_event.clear()
-            print("Connection closed")
-            self.adv_start()
+    def bt_evt_connection_opened(self, evt):
+        """ Bluetooth event callback """
+        self.log.info(f"Connection opened to {evt.address}")
 
-        # Events triggered by the remote GATT client.
-        elif evt == "bt_evt_gatt_server_characteristic_status":
-            if evt.characteristic == self.gattdb_temperature_measurement:
-                if evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CLIENT_CONFIG:
-                    # The remote client requested the status change.
-                    if evt.client_config_flags == self.lib.bt.gatt_server.CLIENT_CONFIGURATION_DISABLE:
-                        print("Indication disabled.")
-                        self.indication_event.clear()
-                    else:
-                        print("Indication enabled.")
-                        self.indication_event.set()
-                elif evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CONFIRMATION:
-                    print("    indication sent.")
+    def bt_evt_connection_closed(self, evt):
+        """ Bluetooth event callback """
+        self.log.info(f"Connection closed with reason {evt.reason:#x}: '{evt.reason}'")
+        self.adv_start()
+
+    def bt_evt_gatt_server_characteristic_status(self, evt):
+        """ Bluetooth event callback """
+        if evt.characteristic == self.gattdb_temperature_measurement:
+            if evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CLIENT_CONFIG:
+                # The remote client requested the status change.
+                if evt.client_config_flags == self.lib.bt.gatt_server.CLIENT_CONFIGURATION_DISABLE:
+                    self.log.info("Indication disabled.")
+                    self.indication_event.clear()
+                else:
+                    self.log.info("Indication enabled.")
+                    self.indication_event.set()
+            elif evt.status_flags == self.lib.bt.gatt_server.CHARACTERISTIC_STATUS_FLAG_CONFIRMATION:
+                self.log.info("    indication sent.")
 
     def gattdb_init(self):
         """ Initialize GATT database. """
@@ -218,7 +218,7 @@ class App(BluetoothApp):
 
     def send_indication(self):
         """ Send indication with dummy temperature data. """
-        print("Sending {} C...".format(self.temperature))
+        self.log.info("Sending {} C...".format(self.temperature))
 
         # Convert temperature value.
         value = TEMPERATURE_UNIT_CELSIUS + Ieee11073Float(self.temperature).to_bytes()

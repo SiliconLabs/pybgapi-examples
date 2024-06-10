@@ -24,59 +24,70 @@ BtMesh Switch NCP-host Light CTL Client Model.
 #    misrepresented as being the original software.
 # 3. This notice may not be removed or altered from any source distribution.
 
-import threading
-import os.path
+from dataclasses import dataclass
+import os
 import sys
+import threading
 sys.path.append(os.path.join(os.path.dirname(__file__), "../.."))
-
 from common.util import BtMeshApp
+from common import btmesh_models as model
+
+# Immediate transition time is 0 seconds
+IMMEDIATE = 0
+# No flags used for message
+NO_FLAGS = 0
 
 class CTLClient(BtMeshApp):
-    """ Implement the Light CTL Client Model specific APIs. """
+    """Implement the Light CTL Client Model specific APIs."""
     def __init__(self, connector, **kwargs):
         super().__init__(connector=connector, **kwargs)
         # ctl transaction identifier
         self.ctl_trid = 0
         # Delay time (in milliseconds) before starting the state change
         self.request_delay = 50
-        # Minimum color temperature 800K, 0x0320
-        self.temperature_min = 800
-        # Maximum color temperature 20000K, 0x4e20
-        self.temperature_max = 20000
-        # Stores the latest desired light temperature level
-        # Actual value, range 800..20000
-        self.temperature_level = 800
         # Lightness level converted from percentage to actual value, range 0..65535
         self.ctl_lightness = 0
         # Maximum lightness percentage value
         self.lightness_pct_max = 100
-        # Delta UV, default vale is 0
-        self.delta_uv = 0
-        # Immediate transition time is 0 seconds
-        self.immediate = 0
         # How many times CTL model messages are to be sent out for reliability
         # Using three by default
         self.ctl_request_count = 3
-        # No flags used for message
-        self.no_flag = 0
+
+    @dataclass
+    class Temperature:
+        """ Dataclass of temperature values. """
+        # Current temperature value
+        min = 800
+        # Target temperature value
+        max = 20000
+        # Default temperature value
+        level = 800
+
+    @dataclass
+    class DeltaUV:
+        """ Dataclass of deltaUV values. """
+        # Delta UV, default value is 0
+        value = 0
         # Maximum Delta UV value
-        self.delta_uv_max = 1
+        max = 1
         # Minimum Delta UV value
-        self.delta_uv_min = -1
+        min = -1
 
     def send_light_ctl_request(self):
-        """ Call 'ctl_request' with 'request_delay' intervals for 'ctl_request_count' times. """
+        """
+        Call 'ctl_request' with 'request_delay' 
+        intervals for 'ctl_request_count' times.
+        """
         # Increment transaction ID for each request, unless it's a retransmission.
         self.ctl_trid += 1
         self.ctl_trid %= 256
 
         # Starting two new timer threads for the second and third message.
-        for count in range (1, self.ctl_request_count, 1):
-            threading.Timer(
-                count*self.request_delay*0.001,
-                self.ctl_request,
-                args = [self.ctl_request_count-count]).start()
-                
+        for count in range(1, self.ctl_request_count, 1):
+            threading.Timer(count * self.request_delay * 0.001,
+                            self.ctl_request,
+                            args=[self.ctl_request_count - count]).start()
+
         # First message with 0ms delay
         self.ctl_request(self.ctl_request_count)
 
@@ -87,17 +98,20 @@ class CTLClient(BtMeshApp):
         :param temperature: holds the latest desired temperature value
         :param count: number of repetition
         """
-        delay = (count-1) * self.request_delay
+        delay = (count - 1) * self.request_delay
         if count > 0:
             self.lib.btmesh.generic_client.publish(
                 0,
-                0x1305,
+                model.BTMESH_LIGHTING_CTL_CLIENT_MODEL_ID,
                 self.ctl_trid,
-                self.immediate,
+                IMMEDIATE,
                 delay,
-                self.no_flag,
+                NO_FLAGS,
                 self.lib.btmesh.generic_client.SET_REQUEST_TYPE_REQUEST_CTL,
-                self.serialize(self.ctl_lightness, self.temperature_level, self.delta_uv))
+                self.serialize(self.ctl_lightness,
+                               self.Temperature.level,
+                               self.DeltaUV.value)
+            )
 
             self.log.info(f"Ctl request, trid: {self.ctl_trid}, delay: {delay}")
 
@@ -127,29 +141,29 @@ class CTLClient(BtMeshApp):
         if temp > 32767:
             temp = 32767 # 0x7FFF
         elif temp < -32768:
-            temp = -32768 # -0x8000
+            temp = -32768  # -0x8000
 
         return temp & 0xFFFF
 
     def set_temperature(self, set_lightness, set_temperature):
         """
         Check if the given value is valid. Valid value range is between
-        'temperature_min' and 'temperature_max'. If the value is not valid 
+        'temperature_min' and 'temperature_max'. If the value is not valid
         then adjust it to be a proper one and call the ctl request function.
 
         :param set_lightness: the current lightness value
         :param set_temperature: desired temperature state given by the user
         """
-        if set_temperature > self.temperature_max:
-            self.temperature_level = self.temperature_max
-        elif set_temperature < self.temperature_min:
-            self.temperature_level = self.temperature_min
+        if set_temperature > self.Temperature.max:
+            self.Temperature.level = self.Temperature.max
+        elif set_temperature < self.Temperature.min:
+            self.Temperature.level = self.Temperature.min
         else:
-            self.temperature_level = set_temperature
+            self.Temperature.level = set_temperature
 
         self.ctl_lightness = self.convert_lightness_percentage(set_lightness)
         self.send_light_ctl_request()
-    
+
     def set_delta_uv(self, set_lightness, set_delta_uv):
         """
         Set the converted velues of Delta UV and lightness
@@ -158,6 +172,6 @@ class CTLClient(BtMeshApp):
         :param set_lightness: the current lightness value
         :param set_delta_uv: desired Delta UV state given by the user
         """
-        self.delta_uv = self.convert_delta_uv(set_delta_uv)
+        self.DeltaUV.value = self.convert_delta_uv(set_delta_uv)
         self.ctl_lightness = self.convert_lightness_percentage(set_lightness)
         self.send_light_ctl_request()
