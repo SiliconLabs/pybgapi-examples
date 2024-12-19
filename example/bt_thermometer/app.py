@@ -72,6 +72,7 @@ class App(BluetoothApp):
     def bt_evt_connection_closed(self, evt):
         """ Bluetooth event callback """
         self.log.info(f"Connection closed with reason {evt.reason:#x}: '{evt.reason}'")
+        self.indication_event.clear()
         self.adv_start()
 
     def bt_evt_gatt_server_characteristic_status(self, evt):

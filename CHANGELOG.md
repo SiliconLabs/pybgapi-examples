@@ -4,6 +4,15 @@ The releases in this repo are based on particular [Gecko SDK](https://github.com
 and [Simplicity SDK](https://github.com/SiliconLabs/simplicity_sdk/releases) releases.
 The version numbers here reflect the GSDK/SiSDK version that the release is based on.
 
+## [2024.12.0] - 2024-12-19
+
+### Changed
+- Update BGAPI version to 9.0.0.
+- Keep SL status codes aligned with the SiSDK
+
+### Fixed
+- Indication not stopped after connection close in the bt_thermometer example
+
 ## [2024.6.0] - 2024-06-10
 
 ### Changed
@@ -88,6 +97,7 @@ The version numbers here reflect the GSDK/SiSDK version that the release is base
 ### Added
 - Initial public release.
 
+[2024.12.0]: https://github.com/SiliconLabs/simplicity_sdk/releases/tag/v2024.12.0
 [2024.6.0]: https://github.com/SiliconLabs/simplicity_sdk/releases/tag/v2024.6.0
 [4.4.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.4.0
 [4.3.0]: https://github.com/SiliconLabs/gecko_sdk/releases/tag/v4.3.0

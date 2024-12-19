@@ -357,11 +357,7 @@ def get_connector(args=None):
 
 def get_device_list():
     """ Find Segger J-Link devices based on USB vendor ID. """
-    device_list = []
-    for com in serial.tools.list_ports.comports():
-        if com.vid == 0x1366:
-            device_list.append(com.device)
-    return device_list
+    return [com.device for com in serial.tools.list_ports.comports() if com.vid == 0x1366]
 
 def connector_from_str(param):
     """ Return a serial or socket connector instance from a string parameter.

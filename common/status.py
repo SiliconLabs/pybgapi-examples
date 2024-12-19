@@ -63,18 +63,23 @@ def compare(header):
     header_values = set()
     pattern = r"#define SL_STATUS_(?P<name>\w+)\s+\(\(sl_status_t\)(?P<value>0x[0-9A-Fa-f]+)\)\s+///< (?P<doc>.+)"
     with open(header, encoding="utf-8") as hdr:
+        parse = False
         for line in hdr:
+            if not parse:
+                # Skip space defines
+                if "Status Defines" in line:
+                    parse = True
+                continue
             match = re.match(pattern, line)
             if not match:
-                continue
-            if "SPACE" in match.group("name"):
-                # Ignore space definitions
                 continue
             value = int(match.group("value"), base=0)
             header_values.add((match.group("name"), value, match.group("doc")))
     local_values = {(name, int(value), _doc[value]) for name, value in globals().items() if name.isupper()}
     diff = local_values ^ header_values
     if diff:
+        # Sort difference based on the integer representation (2nd item in the tuple)
+        diff = sorted(diff, key=lambda x: x[1])
         for d in diff:
             where = "+" if d in local_values else "-"
             print(where, d)
@@ -307,6 +312,50 @@ NVM3_TOKEN_INIT_FAILED = Status(0x005C)
 """The application that there was an error initializing some of the tokens"""
 NVM3_OPENED_WITH_OTHER_PARAMETERS = Status(0x005D)
 """The initialization was aborted as the NVM3 instance was already opened with other parameters"""
+NVM3_NO_VALID_PAGES = Status(0x005E)
+"""Initialization aborted, no valid page found"""
+NVM3_OBJECT_SIZE_NOT_SUPPORTED = Status(0x005F)
+"""The object size is not supported"""
+NVM3_OBJECT_IS_NOT_DATA = Status(0x0060)
+"""Trying to access a data object which is currently a counter object"""
+NVM3_OBJECT_IS_NOT_A_COUNTER = Status(0x0061)
+"""Trying to access a counter object which is currently a data object"""
+NVM3_WRITE_DATA_SIZE = Status(0x0062)
+"""The object is too large"""
+NVM3_READ_DATA_SIZE = Status(0x0063)
+"""Trying to read with a length different from actual object size"""
+NVM3_INIT_WITH_FULL_NVM = Status(0x0064)
+"""The module was opened with a full NVM"""
+NVM3_RESIZE_PARAMETER = Status(0x0065)
+"""Illegal parameter"""
+NVM3_RESIZE_NOT_ENOUGH_SPACE = Status(0x0066)
+"""Not enough NVM to complete resize"""
+NVM3_ERASE_COUNT_ERROR = Status(0x0067)
+"""Erase counts are not valid"""
+NVM3_NVM_ACCESS = Status(0x0068)
+"""A NVM function call was failing"""
+NVM3_CRYPTO_INIT_FAILED = Status(0x0069)
+"""Crypto initialization failed"""
+NVM3_ENCRYPTION_KEY_ERROR = Status(0x006A)
+"""Error in obtaining encryption key"""
+NVM3_RANDOM_NUM_GENERATION_FAILED = Status(0x006B)
+"""Error in obtaining random number"""
+NVM3_ENCRYPTION_FAILED = Status(0x006C)
+"""Encryption failed"""
+NVM3_WRITE_TO_NOT_ERASED = Status(0x006D)
+"""Write to memory that is not erased"""
+NVM3_INVALID_ADDR = Status(0x006E)
+"""Invalid NVM address"""
+NVM3_KEY_MISMATCH = Status(0x006F)
+"""Key validation failure"""
+NVM3_SIZE_ERROR = Status(0x0070)
+"""Size mismatch error"""
+NVM3_EMULATOR = Status(0x0071)
+"""Emulator error"""
+NVM3_SECURITY_INIT_FAILED = Status(0x0072)
+"""Security init failed"""
+NVM3_GET_REGION_LOCATION_FAILED = Status(0x0073)
+"""Get data region location failed"""
 
 # Bluetooth status codes
 BT_OUT_OF_BONDS = Status(0x0402)
@@ -401,6 +450,8 @@ BT_CTRL_PAIRING_NOT_ALLOWED = Status(0x1018)
 """The device does not allow pairing. This can be for example, when a device only allows pairing during a certain time window after some user input allows pairing"""
 BT_CTRL_UNSUPPORTED_REMOTE_FEATURE = Status(0x101A)
 """The remote device does not support the feature associated with the issued command."""
+BT_CTRL_INVALID_LL_PARAMETERS = Status(0x101E)
+"""Indicates that some LMP PDU / LL Control PDU parameters were invalid"""
 BT_CTRL_UNSPECIFIED_ERROR = Status(0x101F)
 """No other error code specified is appropriate to use."""
 BT_CTRL_LL_RESPONSE_TIMEOUT = Status(0x1022)
@@ -455,6 +506,8 @@ BT_CTRL_TOO_LATE = Status(0x1046)
 """Information was provided too late to the controller."""
 BT_CTRL_TOO_EARLY = Status(0x1047)
 """Information was provided too early to the controller."""
+BT_CTRL_INSUFFICIENT_CHANNELS = Status(0x1048)
+"""Indicates that the result of the requested operation would yield too few physical channels."""
 
 # Bluetooth attribute status codes
 BT_ATT_INVALID_HANDLE = Status(0x1101)
@@ -872,6 +925,28 @@ _doc = {
     0x005B: "The initialization was aborted as the NVM3 page size is not supported",
     0x005C: "The application that there was an error initializing some of the tokens",
     0x005D: "The initialization was aborted as the NVM3 instance was already opened with other parameters",
+    0x005E: "Initialization aborted, no valid page found",
+    0x005F: "The object size is not supported",
+    0x0060: "Trying to access a data object which is currently a counter object",
+    0x0061: "Trying to access a counter object which is currently a data object",
+    0x0062: "The object is too large",
+    0x0063: "Trying to read with a length different from actual object size",
+    0x0064: "The module was opened with a full NVM",
+    0x0065: "Illegal parameter",
+    0x0066: "Not enough NVM to complete resize",
+    0x0067: "Erase counts are not valid",
+    0x0068: "A NVM function call was failing",
+    0x0069: "Crypto initialization failed",
+    0x006A: "Error in obtaining encryption key",
+    0x006B: "Error in obtaining random number",
+    0x006C: "Encryption failed",
+    0x006D: "Write to memory that is not erased",
+    0x006E: "Invalid NVM address",
+    0x006F: "Key validation failure",
+    0x0070: "Size mismatch error",
+    0x0071: "Emulator error",
+    0x0072: "Security init failed",
+    0x0073: "Get data region location failed",
 
     # Bluetooth status codes
     0x0402: "Bonding procedure can't be started because device has no space left for bond.",
@@ -921,6 +996,7 @@ _doc = {
     0x1017: "The Controller is disallowing an authentication or pairing procedure because too little time has elapsed since the last authentication or pairing attempt failed.",
     0x1018: "The device does not allow pairing. This can be for example, when a device only allows pairing during a certain time window after some user input allows pairing",
     0x101A: "The remote device does not support the feature associated with the issued command.",
+    0x101E: "Indicates that some LMP PDU / LL Control PDU parameters were invalid",
     0x101F: "No other error code specified is appropriate to use.",
     0x1022: "Connection terminated due to link-layer procedure timeout.",
     0x1023: "LL procedure has collided with the same transaction or procedure that is already in progress.",
@@ -948,6 +1024,7 @@ _doc = {
     0x1045: "An attempt was made to send or receive a packet that exceeds the maximum allowed packet length.",
     0x1046: "Information was provided too late to the controller.",
     0x1047: "Information was provided too early to the controller.",
+    0x1048: "Indicates that the result of the requested operation would yield too few physical channels.",
 
     # Bluetooth attribute status codes
     0x1101: "The attribute handle given was not valid on this server",
